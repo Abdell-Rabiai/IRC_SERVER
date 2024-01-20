@@ -1,0 +1,75 @@
++----------------------------------+           
+|              IRCServer           |           
+|----------------------------------|
+| - Serversocket: int              | // socket for listening for new connections
+| - serverPort: int                | // port on which the server is listening
+| - password: string               | // password for authenticating as clients and operators 
+| - clients: vector<Client>        | // vector to store all connected clients
+| - operators: vector<Client>      | // vector to store all connected operators
+| - channels: vector<Channel>      | // vector to store all channels on the server
+| - fdToClient: map<int, Client>   | // map to store the mapping between client socket and client object 
+|----------------------------------|           
+| + startServer()                  | // starts the server socket and listens for new connections
+| + handleEvents()                 | // handles events such as new connections, new messages, and clients leaving        
+| - acceptNewConnection()          | // accepts a new connection and adds it to the clients vector          
+| - processClientData(Client)      | // processes data received from a client and calls the appropriate methods
+| - broadcastMessage(Channel, Msg) | // broadcasts a message to all users in a channel
++----------------------------------+           
+
+
+
+
++----------------------------------+
+|              Client              |
+|----------------------------------|
+| - socketfd: int                  | // socket for communicating with the client
+| - nickname: string               | // nickname of the client
+| - username: string               | // username of the client
+| - isOperator: bool               | // whether the client is an operator
+| - currentChannels: vector<Channel> | // vector to store all channels the client is currently in
+| - channelMap: map<string, Channel> | // map to store the mapping between channel name and channel object
+|----------------------------------|
+| + sendMessageToClient(Msg)       | // sends a message to a specific client
+| + sendMessageToChaneel(Msg)      | // sends a message to all users in the current channel
+| + joinChannel(Channel)           | // joins a channel
+| + setNickname(string)            | // sets the nickname of the client
+| + setUsername(string)            | // sets the username of the client
+| + authenticate()                 | // authenticates the client as a user or operator 
+| + becomeOperator()               | // makes the client an operator
+| - processReceivedData(Msg)       | // processes data received from the client and calls the appropriate methods
++----------------------------------+
+
+
++----------------------------------+
+|             Channel              |
+|----------------------------------|
+| - name: string                   | // name of the channel
+| - users: vector<Client>          | // vector to store all users in the channel
+|----------------------------------|
+| + addUser(Client)                | // adds a user to the channel
+| + removeUser(Client)             | // removes a user from the channel
+| + broadcastMessage(Msg)          | // broadcasts a message to all users in the channel
++----------------------------------+
+
+
++----------------------------------+
+|               Msg                |
+|----------------------------------|
+| - sender: Client                 | // the client who sent the message
+| - content: string                | // the content of the message
+| - type: MessageType              | // the type of message (JOIN, LEAVE, PRIVATE_MESSAGE, OPERATOR_COMMAND)  
++----------------------------------+
+
+IRCServe ===> Represents the main IRC server, responsible for handling connections, events
+and managing clients and channels.
+
+Client ===> Represents an IRC client connected to the server. It contains information about the client
+such as nickname, username, and whether the client is an operator. It also handles sending and receiving messages.
+
+Channel ===> Represents an IRC channel. It keeps track of the channel name and the users currently in the channel.
+It has methods for adding and removing users and broadcasting messages to the channel.
+
+Msg ===> Represents an IRC message. It contains information about the sender, content, and type of message.
+
+MessageType  ===> An enumeration representing different types of IRC messages
+such as JOIN, LEAVE, PRIVATE_MESSAGE, and OPERATOR_COMMAND.

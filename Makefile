@@ -14,14 +14,14 @@ BANNER=\
 '██ ██   ██ ██                   ██ ██      ██   ██  ██  ██  ██      ██   ██ '\
 '██ ██   ██  ██████ ███████ ███████ ███████ ██   ██   ████   ███████ ██   ██ '\                                                                                              
 																									 
-SOURCE = $(wildcard SOURCE/SERVER/*.cpp)
-SOURCE += $(wildcard SOURCE/CLIENT/*.cpp)
+SOURCES = $(wildcard SOURCE/SERVER/*.cpp)
+SOURCES += $(wildcard SOURCE/CLIENT/*.cpp)
 
 OBJ_DIR = .OBJ_DIR
 
-SRCS = $(SOURCE)
+SRCS = $(SOURCES)
 
-MAIN_SRC = SOURCE/main.cpp
+MAIN_SRC = SOURCES/main.cpp
 
 FLAGS = -Wall -Werror -Wextra -g3 -fsanitize=address
 
