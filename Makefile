@@ -14,8 +14,7 @@ BANNER=\
 '██ ██   ██ ██                   ██ ██      ██   ██  ██  ██  ██      ██   ██ '\
 '██ ██   ██  ██████ ███████ ███████ ███████ ██   ██   ████   ███████ ██   ██ '\                                                                                              
 																									 
-SOURCES = $(wildcard SOURCE/SERVER/*.cpp)
-SOURCES += $(wildcard SOURCE/CLIENT/*.cpp)
+SOURCES = $(wildcard SOURCES/*.cpp)
 
 OBJ_DIR = .OBJ_DIR
 
@@ -27,11 +26,11 @@ FLAGS = -Wall -Werror -Wextra -g3 -fsanitize=address
 
 HEADER = HEADERS/$(wildcard *.hpp)
 
-CC = c++ -std=c++98
+CC = c++ -std=c++11
 
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRCS:.cpp=.o)) 
 
-all : banner2 $(NAME)
+all : $(NAME)
 
 banner2:
 	@clear
@@ -49,7 +48,7 @@ $(OBJ_DIR)/%.o: %.cpp $(HEADER)
 	@$(CC) $(FLAGS) -c $< -o $@
 
 $(NAME) : $(OBJ) $(MAIN_SRC) $(HEADER)
-	@$(CC) $(FLAGS) $(MAIN_SRC) $(OBJ) -o $(NAME)
+	@$(CC) $(FLAGS) $(OBJ) -o $(NAME)
 	@echo "\n\n\t$(Cyan) Enjoooy :)\n $(Color_Off)"
 
 clean :

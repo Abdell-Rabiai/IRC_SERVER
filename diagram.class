@@ -82,11 +82,8 @@
 | + removeOperatorPrivileges(Channel, Client) | // removes operator privileges from a certain client
 | + setChannelLimit(Channel, int)  | // sets the limit of a channel (maximum number of users)
 | + removeChannelLimit(Channel)    | // removes the limit of a channel (allows unlimited number of users)
++----------------------------------+
 
-+----------------------------------+
-| + banClient(Client)              | // bans a client from the server which prevents them from joining any channel on the server
-| + unbanClient(Client)            | // unbans a client from the server which allows them to join any channel on the server
-+----------------------------------+
 
 
 
