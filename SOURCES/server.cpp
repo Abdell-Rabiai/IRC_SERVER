@@ -160,3 +160,60 @@ Server::~Server()
     //     }
     // }
 //
+
+
+/*
+void Server::acceptNewMessage(int socketfd) {
+    char buffer[4096];
+    while(true) {
+        memset(buffer, 0, 4096);
+        int bytesReceived = recv(socketfd, buffer, 4096, 0);
+        if (bytesReceived == -1) {
+            std::cerr << "Error in recv(). Quitting" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (bytesReceived == 0) {
+            std::cout << "Client disconnected " << std::endl;
+            close(socketfd);
+            return;
+        }
+        if (buffer[0] == '\n') {
+            continue;
+        }
+        // display message
+        std::string message = std::string(buffer, 0, bytesReceived - 1);
+        int i = message.find_first_of(' ');
+        std::string command = message.substr(0, i);
+        std::string password = message.substr(i + 1, message.length() - i - 1);
+        std::cout << "pasword: {" << password <<"}"<< std::endl;
+        std::string msg = "You need to authenticate first\n";
+        if (command != "PASS" || password != this->password) {
+            send(socketfd, msg.c_str(), msg.length(), 0);
+            continue;
+        }
+        msg = "You are authenticated successfully \nNow set a nickname using the command NICK <nickname>\n";
+        send(socketfd, msg.c_str(), msg.length(), 0);
+
+        std::cout << "Received: " << message << " from " << socketfd << std::endl;
+        int bytesnickname = recv(socketfd, buffer, 4096, 0);
+        if (bytesnickname == -1) {
+            std::cerr << "Error in recv(). Quitting" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (bytesnickname == 0) {
+            std::cout << "Client disconnected " << std::endl;
+            close(socketfd);
+            return;
+        }
+        if (buffer[0] == '\n') {
+            continue;
+        }
+
+        std::string n = "your nickname is: " + std::string(buffer, 0, bytesnickname - 1) + "\n";
+        send(socketfd, n.c_str(), n.length(), 0);
+        // echo a thank you message back to the client
+        std::string thankYouMsg = "Thank you !! Your message has been received\n";
+        send(socketfd, thankYouMsg.c_str(), thankYouMsg.size() + 1, 0);
+    }
+}
+*/
