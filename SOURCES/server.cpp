@@ -36,20 +36,9 @@ void Server::stopServer() {
 }
 
 int  Server::acceptNewConnection() {
-    char host[NI_MAXHOST]; // this is used to get the hostname of the client
-    char srvce[NI_MAXSERV]; // this is used to get the port number of the client
+    // char host[NI_MAXHOST]; // this is used to get the hostname of the client
+    // char srvce[NI_MAXSERV]; // this is used to get the port number of the client
     int clientSocketfd = this->serverSocket.acceptSocket();
-    // get the hostname and port number of the client
-    memset(host, 0, NI_MAXHOST);
-    memset(srvce, 0, NI_MAXSERV);
-    int result = getnameinfo((struct sockaddr *)&(this->serverSocket.getAddress()), sizeof(this->serverSocket.getAddress()), host, NI_MAXHOST, srvce, NI_MAXSERV, 0);
-    if (result) {
-        std::cout << host << " connected on port " << srvce << std::endl;
-    } else {
-        inet_ntop(AF_INET, &(this->serverSocket.getAddress().sin_addr), host, NI_MAXHOST);
-        std::cout << host << " connected on port " << ntohs(this->serverSocket.getAddress().sin_port) << std::endl;
-    }
-    // create a new client object
     Client client(clientSocketfd);
     this->addClient(client, clientSocketfd);
     this->fdToClient.insert(std::pair<int, Client>(clientSocketfd, client));
@@ -57,7 +46,6 @@ int  Server::acceptNewConnection() {
     std::string clientSocketfdStr = std::to_string(clientSocketfd);
     std::string welcome_msg = "Welcome to the Server number " + clientSocketfdStr + " \n";
     send(clientSocketfd, welcome_msg.c_str(), welcome_msg.length(), 0);
-
     return (clientSocketfd);
 }
 
@@ -75,9 +63,10 @@ void Server::acceptNewMessage(int socketfd) {
             close(socketfd);
             return;
         }
-        if (buffer[0] == '\0') {
+        if (buffer[0] == '\n') {
             continue;
         }
+        // display message
         std::cout << "Received: " << std::string(buffer, 0, bytesReceived - 1) << " from " << socketfd << std::endl;
         // echo message back to the client
         send(socketfd, buffer, bytesReceived + 1, 0);
@@ -92,7 +81,7 @@ void Server::handleEvents() {
     // it handles one client at a time
     while(true) {
     int clientSocketfd;
-    // there are three types of events that we need to handle
+    // there are 2 types of events that we need to handle
     // 1. a client wants to connect to the server
     clientSocketfd = this->acceptNewConnection();
     // 2. a client wants to send a message to the server
@@ -103,6 +92,7 @@ void Server::handleEvents() {
     // 3.3. if the message is a private message then we need to send it to the client
     // 3.4. if the message is a channel message then we need to broadcast it to all the clients in that channel
     // 3.5. if the message is a channel private message then we need to send it to all the clients in that channel
+    close(clientSocketfd);
     }
 }
 
@@ -110,6 +100,7 @@ void Server::handleEvents() {
 void Server::startServer() {
     // create a server socket
     Socket serverSocket(AF_INET, SOCK_STREAM, 0, this->serverPort, INADDR_ANY);
+
     this->serverSocket = serverSocket;
     // bind the server socket to the server address
     this->serverSocket.bindSocket();
@@ -117,6 +108,7 @@ void Server::startServer() {
     this->serverSocket.listenSocket(this->MAX_CLIENTS);
     std::cout << "Server started, Listening on port " << this->serverPort << std::endl;
     this->handleEvents();
+    // close the server socket
 }
 
 

@@ -1,4 +1,7 @@
 # include "../HEADERS/socket.hpp"
+# include "../HEADERS/all_headers.hpp"
+# include <string.h> // strjoin
+
 
 Socket::Socket(int domain, int type, int protocol, int port, unsigned long ip) {
     this->_domain = domain;
@@ -11,6 +14,11 @@ Socket::Socket(int domain, int type, int protocol, int port, unsigned long ip) {
     memset(this->address.sin_zero, '\0', sizeof this->address.sin_zero);
     // create the socket, establish the connection
     this->fd = socket(this->_domain, this->_type, this->_protocol);
+    if (this->fd < 0)
+    {
+        std::cerr << "Error creating socket" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 Socket::Socket() {
@@ -24,6 +32,11 @@ Socket::Socket() {
     memset(this->address.sin_zero, '\0', sizeof this->address.sin_zero);
     // create the socket, establish the connection
     this->fd = socket(this->_domain, this->_type, this->_protocol);
+    if (this->fd < 0)
+    {
+        std::cerr << "Error creating socket" << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 Socket::~Socket() {
@@ -63,6 +76,17 @@ int Socket::acceptSocket() {
     {
         std::cerr << "Error accepting new connection" << std::endl;
         exit(EXIT_FAILURE);
+    }
+    char host[1025]; // this is used to get the hostname of the client
+    char srvce[1025]; // this is used to get the port number of the client
+    memset(host, 0, 1025);
+    memset(srvce, 0, 1025);
+    int res = getnameinfo((struct sockaddr *)&clientAddress, sizeof(clientAddress), host, 1025, srvce, 1025, 0);
+    if (res) {
+        std::cout << host << " connected on port " << srvce << std::endl;
+    } else {
+        inet_ntop(AF_INET, &(clientAddress.sin_addr), host, 1025);
+        std::cout << host << " Connected on port " << ntohs(clientAddress.sin_port) << std::endl;
     }
     return clientSocketfd;
 }
