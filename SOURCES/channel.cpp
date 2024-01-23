@@ -1,9 +1,5 @@
 # include "../HEADERS/all_headers.hpp"
-# include "../HEADERS/server.hpp"
 # include "../HEADERS/client.hpp"
-# include "../HEADERS/message.hpp"
-# include "../HEADERS/channel.hpp"
-# include "../HEADERS/operator.hpp"
 
 Channel::Channel(std::string name)
 {
@@ -25,4 +21,5 @@ Channel::Channel(std::string name)
 Channel::~Channel()
 {
 }
+
 

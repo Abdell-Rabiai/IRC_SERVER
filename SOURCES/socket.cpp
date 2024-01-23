@@ -1,13 +1,14 @@
-# include "../Headers/socket.hpp"
+# include "../HEADERS/socket.hpp"
 
 Socket::Socket(int domain, int type, int protocol, int port, unsigned long ip) {
     this->_domain = domain;
     this->_type = type;
     this->_protocol = protocol;
     // define the address structure
-    this->address.sin_family = AF_INET;
-    this->address.sin_addr.s_addr = htonl(ip);
+    this->address.sin_family = domain;
+    this->address.sin_addr.s_addr = ip;
     this->address.sin_port = htons(port);
+    memset(this->address.sin_zero, '\0', sizeof this->address.sin_zero);
     // create the socket, establish the connection
     this->fd = socket(this->_domain, this->_type, this->_protocol);
 }
@@ -20,6 +21,7 @@ Socket::Socket() {
     this->address.sin_family = AF_INET;
     this->address.sin_addr.s_addr = htonl(INADDR_ANY);
     this->address.sin_port = htons(0);
+    memset(this->address.sin_zero, '\0', sizeof this->address.sin_zero);
     // create the socket, establish the connection
     this->fd = socket(this->_domain, this->_type, this->_protocol);
 }
@@ -30,7 +32,7 @@ Socket::~Socket() {
 
 // this is used to bind the server socket to the server address
 // which is a combination of the server ip and the server port
-void Socket::bindSocket(int port) {
+void Socket::bindSocket() {
     if (bind(this->fd, (struct sockaddr *)&(this->address), sizeof(this->address)) < 0)
     {
         std::cerr << "Error binding socket to address" << std::endl;
@@ -67,12 +69,29 @@ int Socket::acceptSocket() {
 
 // this is used to connect to a server socket from a client socket
 
-void Socket::connectSocket(std::string ip, int port) {
+void Socket::connectSocket() {
     if (connect(this->fd, (struct sockaddr *)&(this->address), sizeof(this->address)) < 0)
     {
         std::cerr << "Error connecting to server" << std::endl;
         exit(EXIT_FAILURE);
     }
+}
+
+Socket::Socket(const Socket &socket) {
+    this->_domain = socket._domain;
+    this->_type = socket._type;
+    this->_protocol = socket._protocol;
+    this->fd = socket.fd;
+    this->address = socket.address;
+}
+
+Socket &Socket::operator=(const Socket &socket) {
+    this->_domain = socket._domain;
+    this->_type = socket._type;
+    this->_protocol = socket._protocol;
+    this->fd = socket.fd;
+    this->address = socket.address;
+    return *this;
 }
 
 void Socket::closeSocket() {
@@ -95,7 +114,7 @@ int Socket::getFd() {
     return this->fd;
 }
 
-struct sockaddr_in Socket::getAddress() {
+const struct sockaddr_in &Socket::getAddress() {
     return this->address;
 }
 
@@ -120,31 +139,3 @@ void Socket::setAddress(struct sockaddr_in address) {
 }
 
 
-    // while(true) {
-    //     // create a set of socket descriptors
-    //     fd_set readfds;
-    //     // clear the socket set
-    //     FD_ZERO(&readfds);
-    //     // add server socket to set
-    //     FD_SET(this->serverSocket.getFd(), &readfds);
-    //     // add client sockets to set
-    //     for (int socketfd : this->clientSocketsfds) {
-    //         FD_SET(socketfd, &readfds);
-    //     }
-    //     // wait for an activity on one of the sockets, timeout is NULL, so wait indefinitely
-    //     int activity = select(FD_SETSIZE, &readfds, NULL, NULL, NULL);
-    //     if ((activity < 0) && (errno!=EINTR)) {
-    //         std::cerr << "Error selecting" << std::endl;
-    //     }
-    //     // if something happened on the server socket, then it's an incoming connection
-    //     if (FD_ISSET(this->serverSocket.getFd(), &readfds)) {
-    //         this->acceptNewConnection();
-    //     }
-    //     // else it's some IO operation on some other socket
-    //     for (int socketfd : this->clientSocketsfds) {
-    //         if (FD_ISSET(socketfd, &readfds)) {
-    //             // check if it was for closing, and also read the incoming message
-    //             this->processClientData(this->fdToClient[socketfd]);
-    //         }
-    //     }
-    // }

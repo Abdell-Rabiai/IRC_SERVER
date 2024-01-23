@@ -8,13 +8,10 @@
 
 int main()
 {
-    int port = 6667;
-    std::string password = "pass";
+    int port = 1337;
+    std::string password = "1337";
 
     Server server(port, password);
-    if (!server.startServer()) {
-        std::cout << "Error starting server" << std::endl;
-        return 1;
-    }
+    server.startServer();
     return 0;
 }

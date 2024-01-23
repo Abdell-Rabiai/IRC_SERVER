@@ -6,14 +6,8 @@ Client::Client(int socketfd) : IrcUser() {
     this->isAuthenticated = false;
 }
 
-int Client::getSocketfd() {
-    return this->socketfd;
-}
 
 Client::~Client() {
     
 }
 
-std::string Client::getNickname() {
-    return this->nickname;
-}

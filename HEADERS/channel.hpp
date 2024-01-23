@@ -1,10 +1,10 @@
-# ifndef __CHANNEL_H__
-# define __CHANNEL_H__
+# pragma once
 # include "all_headers.hpp"
 
 # include "client.hpp"
 # include "message.hpp"
-# include "operator.hpp"
+
+class Client;
 
 class Channel
 {
@@ -70,5 +70,3 @@ class Channel
         void setOperators(std::vector<Client> operators);
         void setOperatorsMap(std::map<int, Client> operatorsMap);
 };
-
-# endif // __CHANNEL_H__

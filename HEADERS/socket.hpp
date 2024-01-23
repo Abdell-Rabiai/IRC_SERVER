@@ -20,13 +20,15 @@ class Socket
     public :
         Socket();
         Socket(int domain, int type, int protocol, int port, unsigned long ip);
+        Socket(const Socket &socket);
+        Socket &operator=(const Socket &socket);
         ~Socket();
 
        // methods
-        void bindSocket(int port);
+        void bindSocket();
         void listenSocket(int maxConnections);
         int acceptSocket();
-        void connectSocket(std::string ip, int port);
+        void connectSocket();
         void closeSocket();
 
         // getters
@@ -34,7 +36,7 @@ class Socket
         int getType();
         int getProtocol();
         int getFd();
-        struct sockaddr_in getAddress();
+        const struct sockaddr_in &getAddress();
 
         // setters
         void setDomain(int domain);

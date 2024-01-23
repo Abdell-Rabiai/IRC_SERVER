@@ -15,10 +15,11 @@ class Server
 {
     private:
         Socket serverSocket;
-        const int MAX_CLIENTS = 100;
+        const int MAX_CLIENTS = SOMAXCONN;
         int serverSocketfd;
         int serverPort;
         std::string password;
+        std::vector<int> allSocketsfds;
         std::vector<Client> clients;
         std::map<int, Client> fdToClient;
         std::vector<Client> operators;
@@ -34,12 +35,15 @@ class Server
         Server(int port, std::string password, Socket serverSocket);
         ~Server();
 
-        bool startServer();
+        void startServer();
         void stopServer();
-        void acceptNewConnection();
+        void handleEvents(); // handles events such as new connections, new messages, client disconnected
+
+        int acceptNewConnection(); // accepts a new connection and adds it to the clients list
+        // and it returns the socket file descriptor of the new client create by accept
+        void acceptNewMessage(int socketfd); // accepts a new message and processes it
         void processClientData(Client client);
         void broadcastMessage(Channel channel, std::string message);
-        void handleEvents();
         void addClient(Client client, int socketfd);
         void removeClient(Client client);
         void addOperator(Client client);
