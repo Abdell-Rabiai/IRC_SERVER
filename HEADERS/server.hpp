@@ -4,13 +4,10 @@
 # include "all_headers.hpp"
 
 # include "client.hpp"
-# include "message.hpp"
-# include "operator.hpp"
 # include "channel.hpp"
 # include "socket.hpp"
-class Client;
-class Channel;
-class Operator;
+
+
 class Server
 {
     private:
@@ -19,14 +16,17 @@ class Server
         int serverSocketfd;
         int serverPort;
         std::string password;
-        std::vector<int> allSocketsfds;
+
+        std::vector<int> clientSocketsfds;
         std::vector<Client> clients;
         std::map<int, Client> fdToClient;
+
         std::vector<Client> operators;
-        std::map<int, Operator> fdToOperator;
+        std::map<int, Client> fdToOperator;
+
         std::vector<Channel> channels;
         std::map<std::string, Channel> nameToChannel;
-        std::vector<int> clientSocketsfds;
+        std::vector <pollfd> pollfds;
 
     public:
 
@@ -41,9 +41,10 @@ class Server
 
         int acceptNewConnection(); // accepts a new connection and adds it to the clients list
         // and it returns the socket file descriptor of the new client create by accept
-        void acceptNewMessage(int socketfd); // accepts a new message and processes it
+        bool acceptNewMessage(int socketfd); // accepts a new message and processes it
         void processClientData(Client client);
-        void broadcastMessage(Channel channel, std::string message);
+        void broadcastMessageOnChannel(Channel channel, std::string message);
+        void broadcastMessageOnServer(std::string message);
         void addClient(Client client, int socketfd);
         void removeClient(Client client);
         void addOperator(Client client);
@@ -69,5 +70,7 @@ class Server
         void setNameToChannel(std::map<std::string, Channel> nameToChannel);
 
 };
+
+std::string printHostInfos(const struct sockaddr_in &address);
 
 # endif // _SERVER_HPP_

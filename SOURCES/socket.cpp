@@ -9,9 +9,9 @@ Socket::Socket(int domain, int type, int protocol, int port, unsigned long ip) {
     this->_protocol = protocol;
     // define the address structure
     this->address.sin_family = domain;
-    this->address.sin_addr.s_addr = ip;
+    this->address.sin_addr.s_addr = htonl(ip);
     this->address.sin_port = htons(port);
-    memset(this->address.sin_zero, '\0', sizeof this->address.sin_zero);
+    memset(this->address.sin_zero, '\0', sizeof(this->address.sin_zero));
     // create the socket, establish the connection
     this->fd = socket(this->_domain, this->_type, this->_protocol);
     if (this->fd < 0)
@@ -29,7 +29,7 @@ Socket::Socket() {
     this->address.sin_family = AF_INET;
     this->address.sin_addr.s_addr = htonl(INADDR_ANY);
     this->address.sin_port = htons(0);
-    memset(this->address.sin_zero, '\0', sizeof this->address.sin_zero);
+    memset(this->address.sin_zero, '\0', sizeof(this->address.sin_zero));
     // create the socket, establish the connection
     this->fd = socket(this->_domain, this->_type, this->_protocol);
     if (this->fd < 0)
@@ -67,26 +67,14 @@ void Socket::listenSocket(int maxConnections) {
 // it returns the client socket file descriptor
 int Socket::acceptSocket() {
     int clientSocketfd;
-    struct sockaddr_in clientAddress;
-    socklen_t clientAddressSize = sizeof(clientAddress);
+    socklen_t addressSize = sizeof(this->address);
 
     // create a new client socket
-    clientSocketfd = accept(this->fd, (struct sockaddr *)&clientAddress, &clientAddressSize);
+    clientSocketfd = accept(this->fd, (struct sockaddr *)&(this->address), &addressSize);
     if (clientSocketfd < 0)
     {
         std::cerr << "Error accepting new connection" << std::endl;
         exit(EXIT_FAILURE);
-    }
-    char host[1025]; // this is used to get the hostname of the client
-    char srvce[1025]; // this is used to get the port number of the client
-    memset(host, 0, 1025);
-    memset(srvce, 0, 1025);
-    int res = getnameinfo((struct sockaddr *)&clientAddress, sizeof(clientAddress), host, 1025, srvce, 1025, 0);
-    if (res) {
-        std::cout << host << " connected on port " << srvce << std::endl;
-    } else {
-        inet_ntop(AF_INET, &(clientAddress.sin_addr), host, 1025);
-        std::cout << host << " Connected on port " << ntohs(clientAddress.sin_port) << std::endl;
     }
     return clientSocketfd;
 }

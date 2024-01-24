@@ -2,7 +2,6 @@
 # include "all_headers.hpp"
 
 # include "client.hpp"
-# include "message.hpp"
 
 class Client;
 
@@ -18,10 +17,11 @@ class Channel
         bool isProtected;
         bool isLimited;
         std::vector<Client> users;
-        std::map<int, Client> usersMap;
+        std::map<int, Client> fdToUser; // key: socketfd, value Client
         std::vector<Client> operators;
-        std::map<int, Client> operatorsMap; // key: socketfd, value Opeartor
+        std::map<int, Client> fdToOperator; // key: socketfd, value Client
         std::map<int, Client> ejectedClients; // key: socketfd, value Client
+        std::vector<int> ejectedfds;
 
     public:
         Channel(std::string name);
@@ -31,7 +31,7 @@ class Channel
         void removeUser(Client client);
         void addOperator(Client client);
         void removeOperator(Client client);
-        void broadcastMessage(Message message);
+        void broadcastMessage(std::string message);
         void setInviteOnly();
         void removeInviteOnly();
         void setRestrictedTopic();
@@ -48,7 +48,7 @@ class Channel
         bool getIsInviteOnly();
         bool getIsRestrictedTopic();
         int getLimit();
-        std::string getKey();
+        const std::string &getKey();
         bool getIsProtected();
         bool getIsLimited();
         std::vector<Client> getUsers();
@@ -56,6 +56,8 @@ class Channel
         std::vector<Client> getOperators();
         std::map<int, Client> getOperatorsMap();
         std::map<int, Client> getEjectedClients();
+        std::vector<int> getEjectedfds();
+
         // setters
         void setName(std::string name);
         void setTopic(std::string topic);
@@ -69,4 +71,6 @@ class Channel
         void setUsersMap(std::map<int, Client> usersMap);
         void setOperators(std::vector<Client> operators);
         void setOperatorsMap(std::map<int, Client> operatorsMap);
+        void setEjectedClients(std::map<int, Client> ejectedClients);
+        void setEjectedfds(std::vector<int> ejectedfds);
 };

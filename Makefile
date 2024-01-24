@@ -20,7 +20,7 @@ OBJ_DIR = .OBJ_DIR
 
 SRCS = $(SOURCES)
 
-MAIN_SRC = SOURCES/main.cpp
+MAIN_SRC = main.cpp
 
 FLAGS =   -g3 -fsanitize=address #-Wextra -Wall -Werror
 
@@ -48,7 +48,7 @@ $(OBJ_DIR)/%.o: %.cpp $(HEADER)
 	@$(CC) $(FLAGS) -c $< -o $@
 
 $(NAME) : $(OBJ) $(MAIN_SRC) $(HEADER)
-	@$(CC) $(FLAGS) $(OBJ) -o $(NAME)
+	@$(CC) $(FLAGS) $(MAIN_SRC) $(OBJ) -o $(NAME)
 	@echo "\n\n\t$(Cyan) Enjoooy :)\n $(Color_Off)"
 
 clean :
