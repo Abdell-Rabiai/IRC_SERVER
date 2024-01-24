@@ -26,6 +26,22 @@ void Server::addClient(Client client, int socketfd) {
 	this->fdToClient.insert(std::pair<int, Client>(socketfd, client));
 }
 
+void Server::removeClient(Client client) {
+	for (int i = 0; i < this->clients.size(); i++) {
+		if (this->clients[i].getSocketfd() == client.getSocketfd()) {
+			this->clients.erase(this->clients.begin() + i);
+			break;
+		}
+	}
+	for (int i = 0; i < this->clientSocketsfds.size(); i++) {
+		if (this->clientSocketsfds[i] == client.getSocketfd()) {
+			this->clientSocketsfds.erase(this->clientSocketsfds.begin() + i);
+			break;
+		}
+	}
+	this->fdToClient.erase(client.getSocketfd());
+}
+
 void Server::stopServer() {
 	// close the server socket
 	close(this->serverSocket.getFd());
@@ -62,8 +78,84 @@ int  Server::acceptNewConnection() {
 	return (clientSocketfd);
 }
 
-void Server::broadcastMessageOnServer(std::string message) {
-	// send the message to all clients including the server except the sender client 
+
+void Server::removeDisconnectedClient(int &socketfd) {
+	// Remove the disconnected client from pollfds
+	std::cout << "Client disconnected " << std::endl;
+	close(socketfd);
+	for (int i = 0; i < this->pollfds.size(); i++) {
+		if (this->pollfds[i].fd == socketfd) {
+			this->pollfds.erase(this->pollfds.begin() + i);
+			break;
+		}
+	}
+	this->removeClient(this->fdToClient[socketfd]);
+}
+
+void Server::broadcastMessageOnServer(std::string &buffer, int senderSocketfd) {
+	std::string msg = "<"+ this->fdToClient[senderSocketfd].getHostName() + "> [" 
+						+ this->fdToClient[senderSocketfd].getPort() + "]: "
+						+ std::string(buffer, 0, buffer.length()) + "\n";
+	std::string thankYouMsg = "Sent\n";
+	send(senderSocketfd, thankYouMsg.c_str(), thankYouMsg.size() + 1, 0);
+	for (int i = 1; i < this->pollfds.size(); i++) {
+		if (this->pollfds[i].fd != senderSocketfd && this->pollfds[i].fd >= 0) {
+			sendMessageToClient(msg, this->fdToClient[this->pollfds[i].fd]);
+		}
+	}
+}
+
+void Server::sendMessageToClient(std::string message , Client client) {
+	send(client.getSocketfd(), message.c_str(), message.length(), 0);
+}
+
+void Server::handleNickCommand(Client &client, std::string nickname) {
+		if (nickname != "") {
+			client.setNickname(nickname);
+			std::string msg = "your nickname is set as: " + nickname + "\n";
+			this->sendMessageToClient(msg, client);
+		}
+}
+
+void Server::handleUserCommand(Client &client, std::string username) {
+		if (username != "") {
+			client.setUsername(username);
+			std::string msg = "your username is set as: " + username + "\n";
+			this->sendMessageToClient(msg, client);
+		}
+}
+
+void parseData(std::string &password, std::string &nickname, std::string &username, std::string data) {
+	std::istringstream iss(data);
+    // Assuming the data format is {PASS password\nNICK nickname\nUSER username 0 * ABDELOUAHED\n}
+    std::string token;
+    while (iss >> token) {
+        if (token == "PASS") {
+            iss >> password;
+        } else if (token == "NICK") {
+            iss >> nickname;
+        } else if (token == "USER") {
+            iss >> username;
+            // Read and ignore the rest of the line
+            std::getline(iss, token);
+        }
+    }
+}
+
+bool Server::processClientData(Client &client, std::string data) {
+
+	// 1.AUTHENTICATION
+	std::string password, nickname, username;
+	parseData(password, nickname, username, data);
+	if (!client.getIsAuthenticated()) {
+		if (!client.authenticate(this->password, password, data))
+			return false;
+	}
+	// 2. NICKNAME
+	this->handleNickCommand(client, nickname);
+	// 3. USERNAME
+	this->handleUserCommand(client, username);
+	return true;
 }
 
 bool Server::acceptNewMessage(int socketfd) {
@@ -75,32 +167,20 @@ bool Server::acceptNewMessage(int socketfd) {
 		exit(EXIT_FAILURE);
 	}
 	if (bytesReceived == 0) {
-		std::cout << "Client disconnected " << std::endl;
-		close(socketfd);
-		 // Remove the disconnected client from pollfds
-		for (int i = 0; i < this->pollfds.size(); i++) {
-			if (this->pollfds[i].fd == socketfd) {
-				this->pollfds.erase(this->pollfds.begin() + i);
-				break;
-			}
-		}
-		this->fdToClient.erase(socketfd);
+		this->removeDisconnectedClient(socketfd);
 		return false;
 	}
 	if (buffer[0] == '\n') {
 		return false;
 	}
-	std::string msg = "<"+ this->fdToClient[socketfd].getHostName() + "> [" 
-						+ this->fdToClient[socketfd].getPort() + "]: "
-						+ std::string(buffer, 0, bytesReceived - 1) + "\n";
-
-	std::string thankYouMsg = "Sent\n";
-	send(socketfd, thankYouMsg.c_str(), thankYouMsg.size() + 1, 0);
-	for (int i = 1; i < this->pollfds.size(); i++) {
-		if (this->pollfds[i].fd != socketfd && this->pollfds[i].fd >= 0) {
-			send(this->pollfds[i].fd, msg.c_str(), msg.length(), 0);
-		}
+	// process the message
+	bool is = this->processClientData(this->fdToClient[socketfd], std::string(buffer, 0, bytesReceived));
+	if (!is) {
+		return false;
 	}
+	std::string broadmsg = std::string(buffer, 0, bytesReceived);
+	this->broadcastMessageOnServer(broadmsg, socketfd);
+	std::cout << "{" << broadmsg << "}" <<std::endl;
 	return true;
 }
 

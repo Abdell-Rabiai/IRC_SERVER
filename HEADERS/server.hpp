@@ -42,13 +42,19 @@ class Server
         int acceptNewConnection(); // accepts a new connection and adds it to the clients list
         // and it returns the socket file descriptor of the new client create by accept
         bool acceptNewMessage(int socketfd); // accepts a new message and processes it
-        void processClientData(Client client);
+        bool processClientData(Client &client, std::string data);
         void broadcastMessageOnChannel(Channel channel, std::string message);
-        void broadcastMessageOnServer(std::string message);
-        void addClient(Client client, int socketfd);
+        void broadcastMessageOnServer(std::string &message, int senderSocketfd);
         void removeClient(Client client);
-        void addOperator(Client client);
-        void removeOperator(Client client);
+        void removeDisconnectedClient(int &socketfd);
+        void addClient(Client client, int socketfd);
+
+
+        void sendMessageToClient(std::string message , Client client);
+        void sendMessageToChannel(std::string message, Channel channel);
+        
+        void handleNickCommand(Client &client, std::string nickname);
+        void handleUserCommand(Client &client, std::string username);
 
         // getters
         int getServerSocketfd();

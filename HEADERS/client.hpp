@@ -25,7 +25,7 @@ class Client
 		void sendMessageToClient(std::string message , Client client);
 		void sendMessageToChannel(std::string message, Channel channel);
 		void joinChannel(Channel channel);
-		void authenticate();
+		bool authenticate(std::string _password, std::string password, std::string data);
 		void becomeOperator();
 		void processReceivedData(std::string message);
 

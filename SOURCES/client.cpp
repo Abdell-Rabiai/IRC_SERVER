@@ -29,90 +29,24 @@ Client::~Client() {
 }
 
 // methods
-
-void Client::sendMessageToClient(std::string message , Client client) {
-    // send message to client
-}
-
-void Client::sendMessageToChannel(std::string message, Channel channel) {
-    // send message to channel
-}
-
-void Client::joinChannel(Channel channel) {
-    // join channel
-}
-
-void Client::authenticate() {
-    // authenticate
-}
-
-void Client::becomeOperator() {
-    // become operator
-}
-
-void Client::processReceivedData(std::string message) {
-    // process received data
-}
-
-// methods specific to operator, we'll add them later
-void Client::kickClient(Client client, Channel) { // KICK
-    // kick client
-}
-
-void Client::inviteClient(Client client, Channel channel) { // INVITE
-    // invite client
-}
-
-void Client::setChannelTopic(Channel channel, std::string topic) { // TOPIC
-    // set channel topic
-}
-
-void Client::viewChannelTopic(Channel channel) { // TOPIC
-    // view channel topic
-}
-
-void Client::setChannelMode(Channel channel, std::string mode) { // MODE
-    // set channel mode
-}
-
-void Client::setInviteOnly(Channel channel) { // MODE
-    // set invite only
-}
-
-void Client::removeInviteOnly(Channel channel) { // MODE
-    // remove invite only
-}
-
-void Client::setRestrictedTopic(Channel channel) { // MODE
-    // set restricted topic
-}
-
-void Client::removeRestrictedTopic(Channel channel) { // MODE
-    // remove restricted topic
-}
-
-void Client::setChannelKey(Channel channel, std::string key) { // MODE
-    // set channel key
-}
-
-void Client::removeChannelKey(Channel channel) {  // MODE
-    // remove channel key
-}
-
-void Client::giveOperatorPrivileges(Channel channel, Client client) { // MODE
-    // give operator privileges
-}
-
-void Client::removeOperatorPrivileges(Channel channel, Client client) { // MODE
-    // remove operator privileges
-}
-
-void Client::setChannelLimit(Channel channel, int limit) { // MODE
-    // set channel limit
-}
-
-void Client::removeChannelLimit(Channel channel) { // MODE
-    // remove channel limit
+bool Client::authenticate(std::string _password, std::string password, std::string data) {
+		int i = data.find_first_of(' ');
+		std::string command = data.substr(0, i);
+		// std::string password = data.substr(i + 1, data.length() - i - 1);
+		std::string msg = "You need to authenticate first\n";
+		if (command != "PASS"){
+            send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
+            return false;
+        }
+        else if (password != _password) {
+            msg = "Wrong password\n";
+            send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
+            return false;
+        }
+		msg = "You are authenticated successfully\n";
+		send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
+		this->setIsAuthenticated(true);
+        return true;
 }
 
 // getters 
