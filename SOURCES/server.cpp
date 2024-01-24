@@ -77,21 +77,27 @@ bool Server::acceptNewMessage(int socketfd) {
 	if (bytesReceived == 0) {
 		std::cout << "Client disconnected " << std::endl;
 		close(socketfd);
+		 // Remove the disconnected client from pollfds
+		for (int i = 0; i < this->pollfds.size(); i++) {
+			if (this->pollfds[i].fd == socketfd) {
+				this->pollfds.erase(this->pollfds.begin() + i);
+				break;
+			}
+		}
+		this->fdToClient.erase(socketfd);
 		return false;
 	}
 	if (buffer[0] == '\n') {
 		return false;
 	}
-	// display message in this format <hostname>: [port]: "message"
 	std::string msg = "<"+ this->fdToClient[socketfd].getHostName() + "> [" 
 						+ this->fdToClient[socketfd].getPort() + "]: "
 						+ std::string(buffer, 0, bytesReceived - 1) + "\n";
 
-	// this->broadcastMessageOnServer(msg);
 	std::string thankYouMsg = "Sent\n";
 	send(socketfd, thankYouMsg.c_str(), thankYouMsg.size() + 1, 0);
 	for (int i = 1; i < this->pollfds.size(); i++) {
-		if (this->pollfds[i].fd != socketfd) {
+		if (this->pollfds[i].fd != socketfd && this->pollfds[i].fd >= 0) {
 			send(this->pollfds[i].fd, msg.c_str(), msg.length(), 0);
 		}
 	}
@@ -99,7 +105,7 @@ bool Server::acceptNewMessage(int socketfd) {
 }
 
 void Server::handleEvents() {
-	// create a poll set
+	// create a poll set and add the server socket to it
 	this->pollfds.push_back({this->serverSocket.getFd(), POLLIN, 0});
 	while(true) {
 		// poll for events hangs indefinitely till an event occurs on any of the sockets in the poll set
@@ -112,6 +118,7 @@ void Server::handleEvents() {
 		if (this->pollfds[0].revents & POLLIN) {
 			int clientSocketfd = this->acceptNewConnection();
 			this->pollfds.push_back({clientSocketfd, POLLIN, 0});
+			// add the new client to the map fdToClient
 		}
 		// check if any of the client sockets is ready to receive data
 		for (int i = 1; i < this->pollfds.size(); i++) {
