@@ -117,36 +117,78 @@ void Server::handleNickCommand(Client &client, std::string nickname) {
 		}
 }
 
-void Server::handleUserCommand(Client &client, std::string username) {
+void Server::handleUserCommand(Client &client, std::string username, std::string realname) {
 		if (username != "") {
 			client.setUsername(username);
 			std::string msg = "your username is set as: " + username + "\n";
 			this->sendMessageToClient(msg, client);
 		}
+		if (realname != "") {
+			client.setRealname(realname);
+			std::string msg = "your realname is set as: " + realname + "\n";
+			this->sendMessageToClient(msg, client);
+		}
 }
 
-void parseData(std::string &password, std::string &nickname, std::string &username, std::string data) {
-	std::istringstream iss(data);
-    // Assuming the data format is {PASS password\nNICK nickname\nUSER username 0 * ABDELOUAHED\n}
+void parseData(std::string &password, std::string &nickname, std::string &username, std::string &realname, std::string data) {
+	std::istringstream str(data);
+    // Assuming the data format is {PASS password\nNICK nickname\nUSER username 0 * :ABDELOUAHED RABIAI\n}
     std::string token;
-    while (iss >> token) {
+    while (str >> token) {
         if (token == "PASS") {
-            iss >> password;
+            str >> password;
         } else if (token == "NICK") {
-            iss >> nickname;
+            str >> nickname;
         } else if (token == "USER") {
-            iss >> username;
-            // Read and ignore the rest of the line
-            std::getline(iss, token);
+			str >> username;
+			str >> token;
+			str >> token;
+			std::string buf;
+			while (str >> token) {
+				buf += token + " ";
+			}
+			realname = buf.substr(1, buf.length() - 2);
         }
     }
 }
 
+// void Server::handleJoinCommand(Client &client, std::string data) {
+// 	std::istringstream str(data);
+// 	std::string token;
+// 	// Assuming the data format is {JOIN #channel1,#channel2,#channel3 password1,password2,password3\n}
+// 	// JOIN #channel1,#channel2,#channel3 password1,password2,password3
+// 	// passwords are optional
+// 	while (str >> token) {
+// 		if (token == "JOIN") {
+// 			while (str >> token) {
+// 				// check if the channel already exists
+// 				if (this->nameToChannel.find(token) != this->nameToChannel.end()) {
+// 					// the channel exists
+// 					// add the client to the channel
+// 					this->nameToChannel[token].addUser(client);
+// 					std::string msg = "You have joined the channel " + token + "\n";
+// 					this->sendMessageToClient(msg, client);
+// 				} else {
+// 					// the channel doesn't exist
+// 					// create a new channel
+// 					Channel channel(token);
+// 					channel.addUser(client);
+// 					this->channels.push_back(channel);
+// 					this->nameToChannel.insert(std::pair<std::string, Channel>(token, channel));
+// 					std::string msg = "You have created and joined the channel " + token + "\n";
+// 					this->sendMessageToClient(msg, client);
+// 				}
+// 			}
+// 		}
+// 	}
+// }
+
+
 bool Server::processClientData(Client &client, std::string data) {
 
 	// 1.AUTHENTICATION
-	std::string password, nickname, username;
-	parseData(password, nickname, username, data);
+	std::string password, nickname, username, realname;
+	parseData(password, nickname, username, realname, data);
 	if (!client.getIsAuthenticated()) {
 		if (!client.authenticate(this->password, password, data))
 			return false;
@@ -154,7 +196,11 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 2. NICKNAME
 	this->handleNickCommand(client, nickname);
 	// 3. USERNAME
-	this->handleUserCommand(client, username);
+	this->handleUserCommand(client, username, realname);
+	// 4. JOIN
+	// this->handleJoinCommand(client, data);
+	// 5. PRIVMSG
+	// this->handlePrivmsgCommand(client, data);
 	return true;
 }
 
@@ -181,6 +227,7 @@ bool Server::acceptNewMessage(int socketfd) {
 	std::string broadmsg = std::string(buffer, 0, bytesReceived);
 	this->broadcastMessageOnServer(broadmsg, socketfd);
 	std::cout << "{" << broadmsg << "}" <<std::endl;
+	// this->fdToClient[socketfd].printClientInfo();
 	return true;
 }
 
@@ -230,59 +277,3 @@ Server::~Server()
 {
 	this->stopServer();
 }
-
-/*
-void Server::acceptNewMessage(int socketfd) {
-	char buffer[4096];
-	while(true) {
-		memset(buffer, 0, 4096);
-		int bytesReceived = recv(socketfd, buffer, 4096, 0);
-		if (bytesReceived == -1) {
-			std::cerr << "Error in recv(). Quitting" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		if (bytesReceived == 0) {
-			std::cout << "Client disconnected " << std::endl;
-			close(socketfd);
-			return;
-		}
-		if (buffer[0] == '\n') {
-			continue;
-		}
-		// display message
-		std::string message = std::string(buffer, 0, bytesReceived - 1);
-		int i = message.find_first_of(' ');
-		std::string command = message.substr(0, i);
-		std::string password = message.substr(i + 1, message.length() - i - 1);
-		std::cout << "pasword: {" << password <<"}"<< std::endl;
-		std::string msg = "You need to authenticate first\n";
-		if (command != "PASS" || password != this->password) {
-			send(socketfd, msg.c_str(), msg.length(), 0);
-			continue;
-		}
-		msg = "You are authenticated successfully \nNow set a nickname using the command NICK <nickname>\n";
-		send(socketfd, msg.c_str(), msg.length(), 0);
-
-		std::cout << "Received: " << message << " from " << socketfd << std::endl;
-		int bytesnickname = recv(socketfd, buffer, 4096, 0);
-		if (bytesnickname == -1) {
-			std::cerr << "Error in recv(). Quitting" << std::endl;
-			exit(EXIT_FAILURE);
-		}
-		if (bytesnickname == 0) {
-			std::cout << "Client disconnected " << std::endl;
-			close(socketfd);
-			return;
-		}
-		if (buffer[0] == '\n') {
-			continue;
-		}
-
-		std::string n = "your nickname is: " + std::string(buffer, 0, bytesnickname - 1) + "\n";
-		send(socketfd, n.c_str(), n.length(), 0);
-		// echo a thank you message back to the client
-		std::string thankYouMsg = "Thank you !! Your message has been received\n";
-		send(socketfd, thankYouMsg.c_str(), thankYouMsg.size() + 1, 0);
-	}
-}
-*/

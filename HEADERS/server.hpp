@@ -48,18 +48,20 @@ class Server
         void removeClient(Client client);
         void removeDisconnectedClient(int &socketfd);
         void addClient(Client client, int socketfd);
+        void handleJoinCommand(Client &client, std::string data);
 
 
         void sendMessageToClient(std::string message , Client client);
         void sendMessageToChannel(std::string message, Channel channel);
         
         void handleNickCommand(Client &client, std::string nickname);
-        void handleUserCommand(Client &client, std::string username);
+        void handleUserCommand(Client &client, std::string username, std::string realname);
 
         // getters
         int getServerSocketfd();
         int getServerPort();
         std::string getPassword();
+
         std::vector<Client> getClients();
         std::vector<Client> getOperators();
         std::vector<Channel> getChannels();
@@ -78,5 +80,6 @@ class Server
 };
 
 std::string printHostInfos(const struct sockaddr_in &address);
+
 
 # endif // _SERVER_HPP_

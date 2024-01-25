@@ -17,14 +17,15 @@ class Channel
         bool isProtected;
         bool isLimited;
         std::vector<Client> users;
+        std::vector<int> usersfds;
         std::map<int, Client> fdToUser; // key: socketfd, value Client
-        std::vector<Client> operators;
-        std::map<int, Client> fdToOperator; // key: socketfd, value Client
         std::map<int, Client> ejectedClients; // key: socketfd, value Client
         std::vector<int> ejectedfds;
 
     public:
         Channel(std::string name);
+        Channel(std::string name, std::string topic);
+        Channel();
         ~Channel();
 
         void addUser(Client client);

@@ -9,25 +9,26 @@ class Client
 		std::string nickname;
 		std::string hostname;
 		std::string username;
+		std::string realname;
 		std::string port;
 		bool isOperator;
 		bool isAuthenticated;
-		std::vector<Channel> currentChannels;
-		std::map<std::string, Channel> nameToChannel;
 
 	public :
 		Client();
 		Client(int socketfd);
 		Client(int socketfd, std::string nickname, std::string username);
+		Client(int socketfd, std::string nickname, std::string username, std::string realname);
 		~Client();
 
 		// methods
 		void sendMessageToClient(std::string message , Client client);
 		void sendMessageToChannel(std::string message, Channel channel);
-		void joinChannel(Channel channel);
 		bool authenticate(std::string _password, std::string password, std::string data);
 		void becomeOperator();
 		void processReceivedData(std::string message);
+		void printClientInfo();
+		// JOIN
 
 		// methods specific to operator, we'll add them later
         void kickClient(Client client, Channel channel); // KICK
@@ -51,10 +52,11 @@ class Client
 		int getSocketfd();
 		std::string getNickname();
 		std::string getUsername();
+		std::string getRealname();
 		bool getIsOperator();
 		bool getIsAuthenticated();
-		std::vector<Channel> getCurrentChannels();
-		std::map<std::string, Channel> getNameToChannel();
+		// std::vector<Channel> getCurrentChannels();
+		// std::map<std::string, Channel> getNameToChannel();
 		std::string getHostName();
 		std::string getPort();
 
@@ -62,10 +64,11 @@ class Client
 		void setSocketfd(int socketfd);
 		void setNickname(std::string nickname);
 		void setUsername(std::string username);
+		void setRealname(std::string realname);
 		void setIsOperator(bool isOperator);
 		void setIsAuthenticated(bool isAuthenticated);
-		void setCurrentChannels(std::vector<Channel> currentChannels);
-		void setNameToChannel(std::map<std::string, Channel> nameToChannel);
+		// void setCurrentChannels(std::vector<Channel> currentChannels);
+		// void setNameToChannel(std::map<std::string, Channel> nameToChannel);
 		void setHostName(std::string hostname);
 		void setPort(std::string port);
 };
