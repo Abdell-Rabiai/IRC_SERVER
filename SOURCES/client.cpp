@@ -52,7 +52,6 @@ bool Client::authenticate(std::string _password, std::string password, std::stri
             return false;
         }
         else if (password != _password) {
-            msg = "Wrong password\n";
             send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
             return false;
         }

@@ -13,6 +13,7 @@ class Client
 		std::string port;
 		bool isOperator;
 		bool isAuthenticated;
+		std::vector<std::string> buffer;
 
 	public :
 		Client();

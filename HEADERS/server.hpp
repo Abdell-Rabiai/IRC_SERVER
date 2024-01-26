@@ -28,6 +28,8 @@ class Server
         std::map<std::string, Channel> nameToChannel;
         std::vector <pollfd> pollfds;
 
+        std::map<int, std::string> fdToBuffer;
+
     public:
 
         Server();
@@ -49,6 +51,8 @@ class Server
         void removeDisconnectedClient(int &socketfd);
         void addClient(Client client, int socketfd);
         void handleJoinCommand(Client &client, std::string data);
+        
+        bool handleRecievedData(Client &client, std::string data);
 
 
         void sendMessageToClient(std::string message , Client client);

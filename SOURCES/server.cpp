@@ -86,7 +86,7 @@ void Server::removeDisconnectedClient(int &socketfd) {
 	for (int i = 0; i < this->pollfds.size(); i++) {
 		if (this->pollfds[i].fd == socketfd) {
 			this->pollfds.erase(this->pollfds.begin() + i);
-			break;
+			break ;
 		}
 	}
 	this->removeClient(this->fdToClient[socketfd]);
@@ -147,7 +147,10 @@ void parseData(std::string &password, std::string &nickname, std::string &userna
 			while (str >> token) {
 				buf += token + " ";
 			}
-			realname = buf.substr(1, buf.length() - 2);
+			if (buf.length() >= 2)
+				realname = buf.substr(1, buf.length() - 2);
+			else
+				realname = "unknown";
         }
     }
 }
@@ -190,8 +193,10 @@ bool Server::processClientData(Client &client, std::string data) {
 	std::string password, nickname, username, realname;
 	parseData(password, nickname, username, realname, data);
 	if (!client.getIsAuthenticated()) {
-		if (!client.authenticate(this->password, password, data))
+		if (!client.authenticate(this->password, password, data)){
+			std::cout << "Error in authentication" << std::endl;
 			return false;
+		}
 	}
 	// 2. NICKNAME
 	this->handleNickCommand(client, nickname);
@@ -201,6 +206,24 @@ bool Server::processClientData(Client &client, std::string data) {
 	// this->handleJoinCommand(client, data);
 	// 5. PRIVMSG
 	// this->handlePrivmsgCommand(client, data);
+	return true;
+}
+
+bool Server::handleRecievedData(Client &client, std::string data) {
+	// Append racieved data to the buffer of the client
+	this->fdToBuffer[client.getSocketfd()] += data;
+	// check if the buffer contains a complete message
+	std::string buffer = this->fdToBuffer[client.getSocketfd()];
+	int pos = buffer.find("\n");
+	if (pos != std::string::npos) {
+		// process the message
+		if (!this->processClientData(client, buffer)) {
+			std::cout << "Error in processingClientdata" << std::endl;
+			return false;
+		}
+		// remove the message from the buffer
+		this->fdToBuffer[client.getSocketfd()].clear();
+	}
 	return true;
 }
 
@@ -220,12 +243,12 @@ bool Server::acceptNewMessage(int socketfd) {
 		return false;
 	}
 	// process the message
-	bool is = this->processClientData(this->fdToClient[socketfd], std::string(buffer, 0, bytesReceived));
-	if (!is) {
+	std::string data = std::string(buffer, 0, bytesReceived);
+	if (!this->handleRecievedData(this->fdToClient[socketfd], data)) {
+		std::cout << "Error in handling Recieved data" << std::endl;
 		return false;
 	}
 	std::string broadmsg = std::string(buffer, 0, bytesReceived);
-	this->broadcastMessageOnServer(broadmsg, socketfd);
 	std::cout << "{" << broadmsg << "}" <<std::endl;
 	// this->fdToClient[socketfd].printClientInfo();
 	return true;
