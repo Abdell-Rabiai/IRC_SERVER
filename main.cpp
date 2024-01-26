@@ -5,10 +5,15 @@
 # include "HEADERS/socket.hpp"
 
 
-int main()
+int main(int argc, char **argv)
 {
-    int port = 1337;
-    std::string password = "1337";
+    if (argc != 3)
+    {
+        std::cerr << "Usage: ./server <port> <password>" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    int port = atoi(argv[1]);
+    std::string password = argv[2];
 
     Server server(port, password);
     server.startServer();
