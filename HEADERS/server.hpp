@@ -39,6 +39,7 @@ class Server
         ~Server();
 
         void startServer();
+        void printAllClients(std::string data);
         void stopServer();
         void handleEvents(); // handles events such as new connections, new messages, client disconnected
 
@@ -56,11 +57,11 @@ class Server
 
         void sendMessageToClient(std::string message , Client client);
         void sendMessageToChannel(std::string message, Channel channel);
-        void createChannel(std::string name, std::string password, Client creator);
+        void createChannel(std::string name, std::string password, Client &creator);
         
         void handleNickCommand(Client &client, std::string nickname);
         void handleUserCommand(Client &client, std::string username, std::string realname);
-        void logic(std::string channelName, std::string key, Client creator);
+        void logic(std::string channelName, std::string key, Client &creator);
         bool handleRecievedData(Client &client, std::string data);
         void handlePrivateMessageCommand(Client &client, std::string data);
 

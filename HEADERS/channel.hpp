@@ -32,6 +32,7 @@ class Channel
         ~Channel();
 
         void addUser(Client client);
+        bool isUserInChannel(Client client);
         void removeUser(Client client);
         void addOperator(Client client);
         void removeOperator(Client client);
@@ -41,7 +42,6 @@ class Channel
         void removeRestrictedTopic();
         void removeKey();
         void removeLimit();
-        bool isUserInChannel(Client client);
         bool isOperatorInChannel(Client client);
 
 

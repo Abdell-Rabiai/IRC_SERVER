@@ -72,6 +72,14 @@ Channel::~Channel()
 
 //methods
 
+bool Channel::isUserInChannel(Client client)
+{
+    if (fdToUser.find(client.getSocketfd()) != fdToUser.end())
+        return true;
+    else
+        return false;
+}
+
 void Channel::addUser(Client client)
 {
     this->users.push_back(client);
