@@ -175,11 +175,42 @@ void Server::createChannel(std::string name, std::string password, Client creato
 	this->sendMessageToClient(msg, creator);
 }
 
+void Server::logic(std::string channelName, std::string key, Client creator) {
+	if (this->nameToChannel.find(channelName) == this->nameToChannel.end()) {
+		if (!key.empty())
+			this->createChannel(channelName, key, creator);
+		else
+			this->createChannel(channelName, "", creator);
+	}
+	else {
+		if (this->nameToChannel[channelName].getKey() == key || this->nameToChannel[channelName].getKey() == "") {
+			this->nameToChannel[channelName].addUser(creator);
+			std::string msg = "You have joined the channel " + channelName + " as a Regular User\n";
+			this->sendMessageToClient(msg, creator);
+		}
+		else {
+			std::string msg = "Please enter the correct password to join the channel " + channelName + "\n";
+			this->sendMessageToClient(msg, creator);
+		}
+	}
+}
 
+// brojola chof had Join command, hm9aatni void Server::handleJoinCommand(Client &client, std::string data)
+// hanta nchr7 lik:
+// 3ndk wahd l buffer smito data, w 3ndk wahd l client smito client
+// data howa la commande dyalk exemple JOIN #channel1,#channel2,#channel3 password1,password2,password3 ==> in this case there are 3 channels and 3 passwords for each channel
+// ha kifach katkhdm JOIN :
+// JOIN {list of channels separated by ','} {list of passwords separated by ','}
+// if the list of passwords wasn't provided, then channels will be created without passwords
+// exemnple : JOIN #channel1,#channel2,#channel3
+// if the there are fewer passwords than channels, then the channels that don't have passwords will be created without passwords
+// example: JOIN #channel1,#channel2,#channel3 password1 ==> in this case channel1 will have password1 and channel2 and channel3 will be created without passwords
+// exemple: JOIN #channel1,#channel2,#channel3 password1,password2 ==> in this case channel1 will have password1 and channel2 will have password2 and channel3 will be created without passwords
+// exemple: JOIN #channel1,#channel2,#channel3 password1,password2,password3 ==> in this case channel1 will have password1 and channel2 will have password2 and channel3 will have password3\
+// FHMTI, PARSI HADCHI LAH IHFDAK
 
+// hadi li drt ltht khdama mzyan f test case fach kan3ti l kola channel password dyalha, mais f les autres cas la.
 void Server::handleJoinCommand(Client &client, std::string data) {
-	// Assuming the data format is {JOIN #channel1,#channel2,#channel3 password1,password2,password3\n}
-	// JOIN #channel1,#channel2,#channel3 password1,password2,password3
 	std::istringstream str(data);
 	std::string token;
 	while (str >> token) {
@@ -209,29 +240,13 @@ void Server::handleJoinCommand(Client &client, std::string data) {
 				std::cout << "Client " << client.getSocketfd() << " wants to join channel {" << channelName << "} with password {" << key << "}" << std::endl;
 				this->NameToPassword.insert(std::pair<std::string, std::string>(channelName, key));
 				// check if the channel not created yet
-				if (this->nameToChannel.find(channelName) == this->nameToChannel.end()) {
-					if (!key.empty())
-						this->createChannel(channelName, key, client);
-					else
-						this->createChannel(channelName, "", client);
-				}
-				else {
-					if (this->nameToChannel[channelName].getKey() == key || this->nameToChannel[channelName].getKey() == "") {
-						this->nameToChannel[channelName].addUser(client);
-						std::string msg = "You have joined the channel " + channelName + " as a Regular User\n";
-						this->sendMessageToClient(msg, client);
-					}
-					else {
-						std::string msg = "Please enter the correct password to join the channel " + channelName + "\n";
-						this->sendMessageToClient(msg, client);
-					}
-				}
+				// logic to add the Channel to the server or add the client to the channel
+				// channel name is channelName and password is key and created by client or client is trying to join the channel
+				this->logic(channelName, key, client);
 			}
-
 		}
 	}
 }
-
 
 bool Server::processClientData(Client &client, std::string data) {
 
@@ -253,7 +268,7 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 4. JOIN
 	this->handleJoinCommand(client, data);
 	// 5. PRIVMSG
-	// this->handlePrivmsgCommand(client, data);
+	// this->handlePrivateMessageCommand(client, data);
 	return true;
 }
 

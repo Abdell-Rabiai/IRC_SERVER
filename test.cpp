@@ -3,7 +3,6 @@
 #include <vector>
 
 
-FUUUUUUCK JOIN 
 void handleJoinCommand(const std::string& data) {
     std::istringstream str(data);
     std::string token;

@@ -53,8 +53,6 @@ class Server
         void addClient(Client client, int socketfd);
         void handleJoinCommand(Client &client, std::string data);
         
-        bool handleRecievedData(Client &client, std::string data);
-
 
         void sendMessageToClient(std::string message , Client client);
         void sendMessageToChannel(std::string message, Channel channel);
@@ -62,6 +60,9 @@ class Server
         
         void handleNickCommand(Client &client, std::string nickname);
         void handleUserCommand(Client &client, std::string username, std::string realname);
+        void logic(std::string channelName, std::string key, Client creator);
+        bool handleRecievedData(Client &client, std::string data);
+        void handlePrivateMessageCommand(Client &client, std::string data);
 
         // getters
         int getServerSocketfd();
