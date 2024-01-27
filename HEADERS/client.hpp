@@ -21,10 +21,11 @@ class Client
 		Client(int socketfd, std::string nickname, std::string username);
 		Client(int socketfd, std::string nickname, std::string username, std::string realname);
 		~Client();
+		bool operator==(const Client &client) const;
 
 		// methods
-		void sendMessageToClient(std::string message , Client client);
-		void sendMessageToChannel(std::string message, Channel channel);
+		// void sendMessageToClient(std::string message , Client client);
+		// void sendMessageToChannel(std::string message, Channel channel);
 		bool authenticate(std::string _password, std::string password, std::string data);
 		void becomeOperator();
 		void processReceivedData(std::string message);

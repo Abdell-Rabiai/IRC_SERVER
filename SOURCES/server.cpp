@@ -92,6 +92,10 @@ void Server::removeDisconnectedClient(int &socketfd) {
 	this->removeClient(this->fdToClient[socketfd]);
 }
 
+void Server::sendMessageToClient(std::string message , Client client) {
+	send(client.getSocketfd(), message.c_str(), message.length(), 0);
+}
+
 void Server::broadcastMessageOnServer(std::string &buffer, int senderSocketfd) {
 	std::string msg = "<"+ this->fdToClient[senderSocketfd].getHostName() + "> [" 
 						+ this->fdToClient[senderSocketfd].getPort() + "]: "
@@ -105,9 +109,12 @@ void Server::broadcastMessageOnServer(std::string &buffer, int senderSocketfd) {
 	}
 }
 
-void Server::sendMessageToClient(std::string message , Client client) {
-	send(client.getSocketfd(), message.c_str(), message.length(), 0);
+void Server::broadcastMessageOnChannel(Channel channel, std::string message) {
+		for (int i = 0; i < channel.getUsers().size(); i++) {
+		this->sendMessageToClient(message, channel.getUsers()[i]);
+	}
 }
+
 
 void Server::handleNickCommand(Client &client, std::string nickname) {
 		if (nickname != "") {
@@ -155,36 +162,75 @@ void parseData(std::string &password, std::string &nickname, std::string &userna
     }
 }
 
-// void Server::handleJoinCommand(Client &client, std::string data) {
-// 	std::istringstream str(data);
-// 	std::string token;
-// 	// Assuming the data format is {JOIN #channel1,#channel2,#channel3 password1,password2,password3\n}
-// 	// JOIN #channel1,#channel2,#channel3 password1,password2,password3
-// 	// passwords are optional
-// 	while (str >> token) {
-// 		if (token == "JOIN") {
-// 			while (str >> token) {
-// 				// check if the channel already exists
-// 				if (this->nameToChannel.find(token) != this->nameToChannel.end()) {
-// 					// the channel exists
-// 					// add the client to the channel
-// 					this->nameToChannel[token].addUser(client);
-// 					std::string msg = "You have joined the channel " + token + "\n";
-// 					this->sendMessageToClient(msg, client);
-// 				} else {
-// 					// the channel doesn't exist
-// 					// create a new channel
-// 					Channel channel(token);
-// 					channel.addUser(client);
-// 					this->channels.push_back(channel);
-// 					this->nameToChannel.insert(std::pair<std::string, Channel>(token, channel));
-// 					std::string msg = "You have created and joined the channel " + token + "\n";
-// 					this->sendMessageToClient(msg, client);
-// 				}
-// 			}
-// 		}
-// 	}
-// }
+void Server::createChannel(std::string name, std::string password, Client creator) {
+	Channel channel(name);
+	if (password != "")
+		channel.setKey(password);
+	channel.addUser(creator);
+	channel.addOperator(creator);
+	creator.setIsOperator(true);
+	this->channels.push_back(channel);
+	this->nameToChannel.insert(std::pair<std::string, Channel>(name, channel));
+	std::string msg = "You have created the channel " + name  + " as an Operator\n";
+	this->sendMessageToClient(msg, creator);
+}
+
+
+
+void Server::handleJoinCommand(Client &client, std::string data) {
+	// Assuming the data format is {JOIN #channel1,#channel2,#channel3 password1,password2,password3\n}
+	// JOIN #channel1,#channel2,#channel3 password1,password2,password3
+	std::istringstream str(data);
+	std::string token;
+	while (str >> token) {
+		// check if the token is JOIN
+		if (token == "JOIN") {
+			std::string channels, passwords, key;
+			str >> channels;
+			std::size_t pos = channels.find(",");
+			while(pos !=  std::string::npos) {
+				// extract first the channel name from the string of channels
+				std::string channelName = channels.substr(0, pos);
+				// remove the channel name from the string channels
+				channels.erase(0, pos + 1);
+				// extract the list of passwords from the string
+				str >> passwords;
+				pos = passwords.find(",");
+				if (pos != std::string::npos){
+					// extract the first password from the string of passwords
+					key = passwords.substr(0, pos);
+					// remove it password from the string of passwords
+					passwords.erase(0, pos + 1);
+				}
+				else {
+					// extract the last password from the string of passwords
+					key = passwords;
+				}
+				std::cout << "Client " << client.getSocketfd() << " wants to join channel {" << channelName << "} with password {" << key << "}" << std::endl;
+				this->NameToPassword.insert(std::pair<std::string, std::string>(channelName, key));
+				// check if the channel not created yet
+				if (this->nameToChannel.find(channelName) == this->nameToChannel.end()) {
+					if (!key.empty())
+						this->createChannel(channelName, key, client);
+					else
+						this->createChannel(channelName, "", client);
+				}
+				else {
+					if (this->nameToChannel[channelName].getKey() == key || this->nameToChannel[channelName].getKey() == "") {
+						this->nameToChannel[channelName].addUser(client);
+						std::string msg = "You have joined the channel " + channelName + " as a Regular User\n";
+						this->sendMessageToClient(msg, client);
+					}
+					else {
+						std::string msg = "Please enter the correct password to join the channel " + channelName + "\n";
+						this->sendMessageToClient(msg, client);
+					}
+				}
+			}
+
+		}
+	}
+}
 
 
 bool Server::processClientData(Client &client, std::string data) {
@@ -192,6 +238,8 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 1.AUTHENTICATION
 	std::string password, nickname, username, realname;
 	parseData(password, nickname, username, realname, data);
+	std::cout << "password {" << password << "}" << std::endl;
+	std::cout << "this->password {" << this->password << "}" << std::endl;
 	if (!client.getIsAuthenticated()) {
 		if (!client.authenticate(this->password, password, data)){
 			std::cout << "Error in authentication" << std::endl;
@@ -203,7 +251,7 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 3. USERNAME
 	this->handleUserCommand(client, username, realname);
 	// 4. JOIN
-	// this->handleJoinCommand(client, data);
+	this->handleJoinCommand(client, data);
 	// 5. PRIVMSG
 	// this->handlePrivmsgCommand(client, data);
 	return true;
@@ -219,10 +267,10 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 		// process the message
 		if (!this->processClientData(client, buffer)) {
 			std::cout << "Error in processingClientdata" << std::endl;
+			this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
 			return false;
 		}
-		// remove the message from the buffer
-		this->fdToBuffer[client.getSocketfd()].clear();
+		this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next command.
 	}
 	return true;
 }
@@ -248,8 +296,7 @@ bool Server::acceptNewMessage(int socketfd) {
 		std::cout << "Error in handling Recieved data" << std::endl;
 		return false;
 	}
-	std::string broadmsg = std::string(buffer, 0, bytesReceived);
-	std::cout << "{" << broadmsg << "}" <<std::endl;
+	std::cout << "{" << data << "}" <<std::endl;
 	// this->fdToClient[socketfd].printClientInfo();
 	return true;
 }

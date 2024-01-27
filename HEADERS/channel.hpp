@@ -21,10 +21,13 @@ class Channel
         std::map<int, Client> fdToUser; // key: socketfd, value Client
         std::map<int, Client> ejectedClients; // key: socketfd, value Client
         std::vector<int> ejectedfds;
+        std::vector<Client> operators;
+        std::map<int, Client> fdToOperator; // key: socketfd, value Client
 
     public:
         Channel(std::string name);
-        Channel(std::string name, std::string topic);
+        Channel(std::string name, std::string password);
+        Channel(std::string name, std::string password, std::string topic);
         Channel();
         ~Channel();
 
@@ -32,7 +35,6 @@ class Channel
         void removeUser(Client client);
         void addOperator(Client client);
         void removeOperator(Client client);
-        void broadcastMessage(std::string message);
         void setInviteOnly();
         void removeInviteOnly();
         void setRestrictedTopic();
@@ -44,12 +46,12 @@ class Channel
 
 
         // getters
-        const std::string & getName();
-        const std::string &getTopic();
+        std::string getName();
+        std::string getTopic();
         bool getIsInviteOnly();
         bool getIsRestrictedTopic();
         int getLimit();
-        const std::string &getKey();
+        std::string getKey();
         bool getIsProtected();
         bool getIsLimited();
         std::vector<Client> getUsers();

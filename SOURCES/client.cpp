@@ -41,21 +41,28 @@ Client::~Client() {
 
 }
 
+bool Client::operator==(const Client &client) const {
+	return this->socketfd == client.socketfd;
+}
+
 // methods
 bool Client::authenticate(std::string _password, std::string password, std::string data) {
+		std::cout << "{" << data <<"}" << std::endl;
 		int i = data.find_first_of(' ');
 		std::string command = data.substr(0, i);
 		// std::string password = data.substr(i + 1, data.length() - i - 1);
-		std::string msg = "You need to authenticate first\n";
+		std::string msg;
 		if (command != "PASS"){
+			msg = "You need to authenticate first\n";
             send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
             return false;
         }
         else if (password != _password) {
+            msg = "Wrong password\n";
             send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
             return false;
         }
-		msg = "You are authenticated successfully\n";
+		msg = "Congrats!! You are authenticated successfully\n";
 		send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
 		this->setIsAuthenticated(true);
         return true;

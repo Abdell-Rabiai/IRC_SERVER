@@ -29,6 +29,7 @@ class Server
         std::vector <pollfd> pollfds;
 
         std::map<int, std::string> fdToBuffer;
+        std::map<std::string, std::string> NameToPassword; // channel name to password
 
     public:
 
@@ -57,6 +58,7 @@ class Server
 
         void sendMessageToClient(std::string message , Client client);
         void sendMessageToChannel(std::string message, Channel channel);
+        void createChannel(std::string name, std::string password, Client creator);
         
         void handleNickCommand(Client &client, std::string nickname);
         void handleUserCommand(Client &client, std::string username, std::string realname);
