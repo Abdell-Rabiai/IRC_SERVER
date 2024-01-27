@@ -194,44 +194,6 @@ void Server::logic(std::string channelName, std::string key, Client &creator) {
 	}
 }
 
-void Server::handleJoinCommand(Client &client, std::string data) {
-	std::istringstream str(data);
-	std::string token;
-	while (str >> token) {
-		// check if the token is JOIN
-		if (token == "JOIN") {
-			std::string channels, passwords, key;
-			str >> channels;
-			std::size_t pos = channels.find(",");
-			while(pos !=  std::string::npos) {
-				// extract first the channel name from the string of channels
-				std::string channelName = channels.substr(0, pos);
-				// remove the channel name from the string channels
-				channels.erase(0, pos + 1);
-				// extract the list of passwords from the string
-				str >> passwords;
-				pos = passwords.find(",");
-				if (pos != std::string::npos){
-					// extract the first password from the string of passwords
-					key = passwords.substr(0, pos);
-					// remove it password from the string of passwords
-					passwords.erase(0, pos + 1);
-				}
-				else {
-					// extract the last password from the string of passwords
-					key = passwords;
-				}
-				std::cout << "Client " << client.getSocketfd() << " wants to join channel {" << channelName << "} with password {" << key << "}" << std::endl;
-				this->NameToPassword.insert(std::pair<std::string, std::string>(channelName, key));
-				// check if the channel not created yet
-				// logic to add the Channel to the server or add the client to the channel
-				// channel name is channelName and password is key and created by client or client is trying to join the channel
-				this->logic(channelName, key, client);
-			}
-		}
-	}
-}
-
 std::vector<std::string> split(std::string str, char delimiter) {
 	std::vector<std::string> tokens;
 	std::string token;
@@ -241,6 +203,32 @@ std::vector<std::string> split(std::string str, char delimiter) {
 	}
 	return tokens;
 }
+
+void Server::handleJoinCommand(Client &client, std::string data) {
+	std::istringstream str(data);
+	std::string channelNames;
+	std::string pwds;
+	std::string token;
+	std::vector<std::string> channels;
+    std::vector<std::string> passwords;
+	str >> token;
+	if (token == "JOIN") {
+		str >> channelNames;
+		str >> pwds;
+		channels = split(channelNames, ',');
+		passwords = split(pwds, ',');
+		std::cout << "channels.size() {" << channels.size() << "}" << std::endl;
+		for (int i = 0; i < channels.size(); i++) {
+			if (i < passwords.size()) {
+				this->logic(channels[i], passwords[i], client);
+			}
+			else {
+				this->logic(channels[i], "", client);
+			}
+		}
+	}
+}
+
 
 void Server::handlePrivateMessageCommand(Client &client, std::string data) {
 	// first of all parse the data
@@ -354,7 +342,7 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 3. USERNAME
 	this->handleUserCommand(client, username, realname);
 	// 4. JOIN
-	// this->handleJoinCommand(client, data);
+	this->handleJoinCommand(client, data);
 	// 5. PRIVMSG
 	this->handlePrivateMessageCommand(client, data);
 	// 6. PRINT

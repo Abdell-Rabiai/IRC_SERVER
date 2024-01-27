@@ -11,11 +11,11 @@ int main(int argc, char **argv)
 
         if (argc != 3)
         {
-            std::cerr << "Usage: ./server <port> <password>" << std::endl;
+            std::cerr << "Usage: ./server <password> <port> " << std::endl;
             return 1;
         }
-        int port = atoi(argv[1]);
-        std::string password = argv[2];
+        int port = atoi(argv[2]);
+        std::string password = argv[1];
         std::cout << password << std::endl;
 
         Server server(port, password);
