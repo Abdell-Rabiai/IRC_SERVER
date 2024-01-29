@@ -1,8 +1,5 @@
 # pragma once
 # include "all_headers.hpp"
-
-# include "client.hpp"
-
 class Client;
 
 class Channel
@@ -23,6 +20,10 @@ class Channel
         std::vector<int> ejectedfds;
         std::vector<Client> operators;
         std::map<int, Client> fdToOperator; // key: socketfd, value Client
+        std::string creatorNickname; // the nickname of the client who created the channel
+        std::string creationTime;
+        std::string topicTime;
+        std::string topicSetterNickname; // the nickname of the client who set the topic
 
     public:
         Channel(std::string name);
@@ -48,6 +49,7 @@ class Channel
         // getters
         std::string getName();
         std::string getTopic();
+
         bool getIsInviteOnly();
         bool getIsRestrictedTopic();
         int getLimit();
@@ -60,6 +62,12 @@ class Channel
         std::map<int, Client> getOperatorsMap();
         std::map<int, Client> getEjectedClients();
         std::vector<int> getEjectedfds();
+        std::string getTopicSetterNickname();
+        std::string getCreationTime();
+        std::string getTopicTime();
+        std::string getCreatorNickname();
+
+
 
         // setters
         void setName(std::string name);
@@ -76,4 +84,8 @@ class Channel
         void setOperatorsMap(std::map<int, Client> operatorsMap);
         void setEjectedClients(std::map<int, Client> ejectedClients);
         void setEjectedfds(std::vector<int> ejectedfds);
+        void setCreatorNickname(std::string creatorNickname); // dont forget to set creator in the command JOIN
+        void setCreationTime(std::string creationTime); // dont forget to set creation time in the command JOIN
+        void setTopicTime(std::string topicTime); // dont forget to set topic time in the command TOPIC
+        void setTopicSetterNickname(std::string topicSetterNickname); // dont forget to set topic setter in the command TOPIC
 };

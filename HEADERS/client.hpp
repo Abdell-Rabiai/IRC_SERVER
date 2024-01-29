@@ -1,6 +1,7 @@
 # pragma once
 # include "all_headers.hpp"
-# include "channel.hpp"
+class Channel;
+
 
 class Client
 {
@@ -15,6 +16,12 @@ class Client
 		bool isAuthenticated;
 		std::vector<std::string> buffer;
 
+		std::string command;
+		std::vector<std::string> parameters;
+		std::string trailing;
+
+		bool isUserRegistered;
+
 	public :
 		Client();
 		Client(int socketfd);
@@ -24,12 +31,15 @@ class Client
 		bool operator==(const Client &client) const;
 
 		// methods
-		// void sendMessageToClient(std::string message , Client client);
-		// void sendMessageToChannel(std::string message, Channel channel);
-		bool authenticate(std::string _password, std::string password, std::string data);
+		void parseIrcMessage(std::string buffer);
+		bool authenticate(std::string SeverPassword);
+
+		// nickname related methods
+
 		void becomeOperator();
 		void processReceivedData(std::string message);
 		void printClientInfo();
+		bool confirmRegistration();
 		// JOIN
 
 		// methods specific to operator, we'll add them later
@@ -57,10 +67,13 @@ class Client
 		std::string getRealname();
 		bool getIsOperator();
 		bool getIsAuthenticated();
-		// std::vector<Channel> getCurrentChannels();
-		// std::map<std::string, Channel> getNameToChannel();
+		std::vector<std::string> getBuffer();
+		std::string getCommand();
+		std::vector<std::string> getParameters();
+		std::string getTrailing();
 		std::string getHostName();
 		std::string getPort();
+		bool getIsUserRegistered();
 
 		// setters
 		void setSocketfd(int socketfd);
@@ -69,8 +82,11 @@ class Client
 		void setRealname(std::string realname);
 		void setIsOperator(bool isOperator);
 		void setIsAuthenticated(bool isAuthenticated);
-		// void setCurrentChannels(std::vector<Channel> currentChannels);
-		// void setNameToChannel(std::map<std::string, Channel> nameToChannel);
+		void setBuffer(std::vector<std::string> buffer);
+		void setCommand(std::string command);
+		void setParameters(std::vector<std::string> parameters);
+		void setTrailing(std::string trailing);
 		void setHostName(std::string hostname);
 		void setPort(std::string port);
+		void setIsUserRegistered(bool isUserRegistered);
 };

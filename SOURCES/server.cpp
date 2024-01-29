@@ -7,10 +7,36 @@ Server::Server() {
 	this->serverSocketfd = serverSocket.getFd();
 }
 
+std::string Server::getCurrentTime() {
+	time_t now = time(0);
+	tm *ltm = localtime(&now);
+	std::string year = std::to_string(1900 + ltm->tm_year);
+	std::string month = std::to_string(1 + ltm->tm_mon);
+	std::string day = std::to_string(ltm->tm_mday);
+	std::string hour = std::to_string(ltm->tm_hour);
+	std::string min = std::to_string(ltm->tm_min);
+	std::string sec = std::to_string(ltm->tm_sec);
+	std::string currentTime = year + "-" + month + "-" + day + " " + hour + ":" + min + ":" + sec;
+	return currentTime;
+}
+
+std::string Server::getServerIp()
+{
+	char IP[256];
+   if (gethostname(IP, sizeof(IP)) != 0) {
+	   std::cerr << "Error in gethostname" << std::endl;
+	   exit(EXIT_FAILURE);
+   }
+   return std::string(IP);
+}
+
 Server::Server(int port, std::string password) {
 	this->serverPort = port;
 	this->password = password;
+	this->serverName = "TABI3A_BLACKHOLE";
+	this->serverCreationTime = Server::getCurrentTime();
 	this->serverSocketfd = serverSocket.getFd();
+	this->serverHostName = getServerIp();
 }
 
 Server::Server(int port, std::string password, Socket serverSocket) {
@@ -42,12 +68,53 @@ void Server::removeClient(Client client) {
 	this->fdToClient.erase(client.getSocketfd());
 }
 
+bool Server::isChannelExist(std::string channelName) {
+	if (this->nameToChannel.find(channelName) != this->nameToChannel.end())
+		return true;
+	return false;
+}
+
+Channel Server::getChannelByName(std::string channelName) {
+	if (this->isChannelExist(channelName))
+		return this->nameToChannel[channelName];
+	return Channel();
+}
+
+bool Server::isClientInChannel(Client &client, std::string channelName) {
+	if (this->isChannelExist(channelName)) {
+		return this->nameToChannel[channelName].isUserInChannel(client);
+	}
+	return false;
+}
+
+bool Server::isChannelhasTopic(std::string channelName) {
+	if (this->isChannelExist(channelName)) {
+		return this->nameToChannel[channelName].getTopic() != "";
+	}
+	return false;
+}
+
+bool Server::isChannelHasPassword(std::string channelName) {
+	if (this->isChannelExist(channelName)) {
+		return this->nameToChannel[channelName].getKey() != "";
+	}
+	return false;
+}
+
+bool Server::isChannelPasswordCorrect(std::string channelName, std::string password) {
+	if (this->isChannelExist(channelName)) {
+		return this->nameToChannel[channelName].getKey() == password;
+	}
+	return false;
+}
+
+
 void Server::stopServer() {
 	// close the server socket
 	close(this->serverSocket.getFd());
 	// close all client sockets
-	for (Client client : this->clients) {
-		close(client.getSocketfd());
+	for (int i = 0; i < this->clientSocketsfds.size(); i++) {
+		close(this->clientSocketsfds[i]);
 	}
 }
 
@@ -70,6 +137,7 @@ int  Server::acceptNewConnection() {
 	int clientSocketfd = this->serverSocket.acceptSocket();
 	Client client(clientSocketfd);
 	std::string hostname = printHostInfos(this->serverSocket.getAddress(), &client); 
+	client.setHostName(hostname);
 	this->addClient(client, clientSocketfd);
 	// send a welcome message to the client
 	std::string clientSocketfdStr = std::to_string(clientSocketfd);
@@ -110,30 +178,42 @@ void Server::broadcastMessageOnServer(std::string &buffer, int senderSocketfd) {
 }
 
 void Server::broadcastMessageOnChannel(Channel channel, std::string message) {
+	if (this->isChannelExist(channel.getName())) {
 		for (int i = 0; i < channel.getUsers().size(); i++) {
-		this->sendMessageToClient(message, channel.getUsers()[i]);
+			if (channel.getUsers()[i].getSocketfd() >= 0) {
+				sendMessageToClient(message, channel.getUsers()[i]);
+			}
+		}
 	}
 }
 
 
-void Server::handleNickCommand(Client &client, std::string nickname) {
-		if (nickname != "") {
-			client.setNickname(nickname);
-			std::string msg = "your nickname is set as: " + client.getNickname() + "\n";
-			this->sendMessageToClient(msg, client);
-		}
+void Server::handleNickCommand(Client &client) {
+	std::string nickname = this->fdToClient[client.getSocketfd()].getParameters()[0];
+	if (nickname != "") {
+		client.setNickname(nickname);
+		std::string msg = "your nickname is set as: " + client.getNickname() + "\n";
+		this->sendMessageToClient(msg, client);
+	}
 }
 
-void Server::handleUserCommand(Client &client, std::string username, std::string realname) {
-		if (username != "") {
-			client.setUsername(username);
-			std::string msg = "your username is set as: " + client.getUsername() + "\n";
-			this->sendMessageToClient(msg, client);
-		}
-		if (realname != "") {
-			client.setRealname(realname);
-			std::string msg = "your realname is set as: " + client.getRealname() + "\n";
-		}
+void Server::handleUserCommand(Client &client) {
+	// USER username 0 * :ABDELOUAHED RABIAI
+	std::string username = this->fdToClient[client.getSocketfd()].getParameters()[0];
+	std::string realname = "";
+	if (this->fdToClient[client.getSocketfd()].getParameters().size() >= 4) {
+		realname = this->fdToClient[client.getSocketfd()].getParameters()[3];
+	}
+	if (username != "") {
+		client.setUsername(username);
+		std::string response = "your username is set as: [" + client.getUsername() + "]\n";
+		this->sendMessageToClient(response, client);
+	}
+	if (realname != "") {
+		client.setRealname(realname);
+		std::string response = "your realname is set as: [" + client.getRealname() + "]\n";
+		this->sendMessageToClient(response, client);
+	}
 }
 
 void parseData(std::string &password, std::string &nickname, std::string &username, std::string &realname, std::string data) {
@@ -165,23 +245,34 @@ void Server::createChannel(std::string name, std::string password, Client &creat
 	Channel channel(name);
 	if (password != "")
 		channel.setKey(password);
+	channel.setCreatorNickname(creator.getNickname());
+	channel.setCreationTime(Server::getCurrentTime());
 	channel.addUser(creator);
 	channel.addOperator(creator);
 	creator.setIsOperator(true);
 	this->channels.push_back(channel);
 	this->nameToChannel.insert(std::pair<std::string, Channel>(name, channel));
-	std::string msg = "You have created the channel " + name  + " as an Operator\n";
+	std::string msg = "You have created the channel {" + name  + "} as an Operator using the password {" + password + "}\n";
 	this->sendMessageToClient(msg, creator);
 }
 
 void Server::logic(std::string channelName, std::string key, Client &creator) {
+	// if the channel doesn't exist create it
 	if (this->nameToChannel.find(channelName) == this->nameToChannel.end()) {
 		if (!key.empty())
 			this->createChannel(channelName, key, creator);
 		else
 			this->createChannel(channelName, "", creator);
 	}
+	// if the channel exists
 	else {
+		// check if the client is already in the channel
+		if (this->nameToChannel[channelName].isUserInChannel(creator)) {
+			std::string msg = "443 ERR_USERONCHANNEL " + creator.getNickname() + " " + channelName + " :is already on channel\n"; 
+			this->sendMessageToClient(msg, creator);
+			return;
+		}
+		// check if the channel has a password
 		if (this->nameToChannel[channelName].getKey() == key || this->nameToChannel[channelName].getKey() == "") {
 			this->nameToChannel[channelName].addUser(creator);
 			std::string msg = "You have joined the channel " + channelName + " as a Regular User\n";
@@ -189,127 +280,127 @@ void Server::logic(std::string channelName, std::string key, Client &creator) {
 		}
 		else {
 			std::string msg = "Please enter the correct password to join the channel " + channelName + "\n";
+			//ERR_BADCHANNELKEY (475)
+			msg = "475 ERR_BADCHANNELKEY " + channelName + " Cannot join channel (+k) - bad key\n";
 			this->sendMessageToClient(msg, creator);
 		}
 	}
+	this->JoinResponse(creator, channelName);
 }
 
-std::vector<std::string> split(std::string str, char delimiter) {
-	std::vector<std::string> tokens;
+std::vector<std::string>  split(std::string str, std::string delimiter) {
+	std::vector<std::string> result;
+	size_t pos = 0;
 	std::string token;
-	std::istringstream tokenStream(str);
-	while (std::getline(tokenStream, token, delimiter)) {
-		tokens.push_back(token);
+	while ((pos = str.find(delimiter)) != std::string::npos) {
+		token = str.substr(0, pos);
+		result.push_back(token);
+		str.erase(0, pos + delimiter.length());
 	}
-	return tokens;
+	result.push_back(str);
+	return result;
 }
 
-void Server::handleJoinCommand(Client &client, std::string data) {
-	std::istringstream str(data);
-	std::string channelNames;
-	std::string pwds;
-	std::string token;
-	std::vector<std::string> channels;
-    std::vector<std::string> passwords;
-	str >> token;
-	if (token == "JOIN") {
-		str >> channelNames;
-		str >> pwds;
-		channels = split(channelNames, ',');
-		passwords = split(pwds, ',');
-		std::cout << "channels.size() {" << channels.size() << "}" << std::endl;
-		for (int i = 0; i < channels.size(); i++) {
-			if (i < passwords.size()) {
-				this->logic(channels[i], passwords[i], client);
-			}
-			else {
-				this->logic(channels[i], "", client);
-			}
+void Server::JoinResponse(Client &client, std::string channelName) {
+	// 1. JOIN message to the client
+	std::string joinMessage = "JOIN " + channelName + "\n";
+	this->sendMessageToClient(joinMessage, client);
+	// A JOIN message with the client as the message <source> and the channel they have joined as the first parameter of the message.
+	// :<source> JOIN <channel> and <source> ==> <nickname>!<username>@<hostname>
+	std::string broadcastMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " JOIN " + channelName + "\n";
+	this->sendMessageToClient(broadcastMessage, client);
+
+	// 2. Channel topic if available
+	if (this->isChannelhasTopic(channelName)) {
+		std::string topic;
+		std::string topicMessage;
+		std::string timeSetTopicByWhoMessage;
+		topic = this->nameToChannel[channelName].getTopic();
+		topicMessage = "332 RPL_TOPIC " + channelName + " :" + topic + "\n";
+		this->sendMessageToClient(topicMessage, client);
+		timeSetTopicByWhoMessage = "333 RPL_TOPICWHOTIME " + channelName + " " + this->nameToChannel[channelName].getCreatorNickname() + " " + this->nameToChannel[channelName].getTopicTime() + "\n";
+		this->sendMessageToClient(timeSetTopicByWhoMessage, client);
+	}
+	// 3. list of users in the channel
+	std::string ListMessage;
+	std::vector<Client> users = this->nameToChannel[channelName].getUsers();
+	for (int i = 0; i < users.size(); i++) {
+		ListMessage = "353 RPL_NAMREPLY " + client.getNickname() + " = " + channelName + " :" + users[i].getNickname() + "\n";
+		this->sendMessageToClient(ListMessage, client);
+	}
+	// 4. end of list
+	std::string endOfListMessage = "366 RPL_ENDOFNAMES " + channelName + " :End of NAMES list\n";
+}
+
+void Server::handleJoinCommand(Client &client) {
+	// JOIN #channel1,#channel2,#channel3 key1,key2,key3
+	std::string data = this->fdToClient[client.getSocketfd()].getParameters()[0];
+	std::string data1 = this->fdToClient[client.getSocketfd()].getParameters()[1];
+	std::vector<std::string> channels = split(data, ",");
+	std::vector<std::string> keys = split(data1, ",");
+	for (int i = 0; i < channels.size(); i++) {
+		if (i < keys.size()) {
+			this->logic(channels[i], keys[i], client);
+		}
+		else {
+			this->logic(channels[i], "", client);
 		}
 	}
 }
 
-
-void Server::handlePrivateMessageCommand(Client &client, std::string data) {
-	// first of all parse the data
-	std::string message;
-	std::vector<std::string> receivers;
-	std::istringstream str(data);
-	std::string token;
-	str >> token; // skip the PRIVMSG token
-	if (token != "PRIVMSG")
-		return;
-	if (str >> token && token[0] != ':') {
-		// extract the nickname of the receivers
-		receivers = split(token, ',');
-	}
-	// extract the message
-	std::getline(str, message);
-	// remove the first space from the message
-	if (!message.empty() && message[0] == ' ')
-		message.erase(0, 1);
-	std::cout << "message {" << message << "}" << std::endl;
-	// print the receivers
-	for (int i = 0; i < receivers.size(); i++) {
-		std::cout << "receiver [" << receivers[i] << "]" << std::endl;
-	}
-
-	// check if the receivers are channels or users
-	for (int i = 0; i < receivers.size(); i++) {
-		if (receivers[i][0] != '#') {
-			std::cout << "the receiver is a user [" << receivers[i] << "]" << std::endl;
-			// the receiver is a user
-			// check if the receiver is connected to the server
-			if (this->fdToClient.find(client.getSocketfd()) != this->fdToClient.end()) {
-				// the receiver is connected to the server
-				// send the message to the receiver
-				std::string msg = "<" + client.getNickname() + "> - [" + client.getUsername() + "]: " + message + "\n";
-				int fd;
-				for (int j = 0; j < this->clients.size(); j++) {
-					if (this->clients[j].getNickname() == receivers[i]) {
-						fd = this->clients[j].getSocketfd();
-						std::cout << "sending the message to the receiver with fd [" << fd << "]" << std::endl;
-						this->sendMessageToClient(msg, this->fdToClient[fd]);
-						break;
-					}
-				}
-			}
-			else {
-				// the receiver is not connected to the server
-				// send an error message to the sender
-				std::string msg = "Error: " + receivers[i] + " is not connected to the server\n";
-				this->sendMessageToClient(msg, client);
-			}
+Client Server::getClientByNickname(std::string nickname) {
+	for (int i = 0; i < this->clients.size(); i++) {
+		if (this->clients[i].getNickname() == nickname) {
+			return this->clients[i];
 		}
-		else if (receivers[i][0] == '#') {
-			std::cout << "the receiver is a the channel [" << receivers[i] << "]" << std::endl;
-			// the receiver is a channel
-			// check if the channel exists
-			if (this->nameToChannel.find(receivers[i]) != this->nameToChannel.end()) {
-				// the channel exists
-				// check if the sender is a member of the channel
-				if (this->nameToChannel[receivers[i]].isUserInChannel(client)) {
-					// the sender is a member of the channel
-					// send the message to all the members of the channel
-					std::string msg = "<" + client.getNickname() + "> - [" + client.getUsername() + "]: " + message + "\n";
-					this->broadcastMessageOnChannel(this->nameToChannel[receivers[i]], msg);
-				}
-				else {
-					// the sender is not a member of the channel
-					// send an error message to the sender
-					std::string msg = "Error: you are not a member of the channel " + receivers[i] + "\n";
-					this->sendMessageToClient(msg, client);
-				}
-			}
-			else {
-				// the channel does not exist
-				// send an error message to the sender
-				std::string msg = "Error: the channel " + receivers[i] + " does not exist\n";
-				this->sendMessageToClient(msg, client);
-			}
-		}
+	}
+	return Client();
+}
+
+void Server::sendPrivateMessageToClient(Client &client, std::string recipientNickname, std::string message) {
+
+	if (this->getClientByNickname(recipientNickname).getSocketfd() != -1) {
+		std::string msg;
+		// msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + recipientNickname + " :" + message + "\n";
+		msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + this->serverHostName + " PRIVMSG " + recipientNickname + " :" + message + "\n";
+		this->sendMessageToClient(msg, this->getClientByNickname(recipientNickname));
+	}
+	else {
+		std::string msg = "401 ERR_NOSUCHNICK" + recipientNickname + " No such user with this nickname\n";
+		this->sendMessageToClient(msg, client);
 	}
 }
+
+void Server::sendPrivateMessageToChannel(Client &client, std::string channelName, std::string message) {
+	if (this->nameToChannel.find(channelName) != this->nameToChannel.end()) {
+		if (this->nameToChannel[channelName].isUserInChannel(client)) {
+			std::string msgToLimChat = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + channelName + " :" + message + "\n";
+			this->broadcastMessageOnChannel(this->nameToChannel[channelName], msgToLimChat);
+		}
+		else {
+			std::string msg = "404 ERR_CANNOTSENDTOCHAN " + channelName + " Cannot send to channel\n";
+			this->sendMessageToClient(msg, client);
+		}
+	}
+	else {
+		std::string msg = "403 ERR_NOSUCHCHANNEL " + channelName + " No such channel\n";
+		this->sendMessageToClient(msg, client);
+	}
+}
+
+void Server::handlePrivateMessageCommand(Client &client) {
+	std::string receivers = this->fdToClient[client.getSocketfd()].getParameters()[0];
+	std::string message = this->fdToClient[client.getSocketfd()].getParameters()[1];
+	std::vector<std::string> recipients = split(receivers, ",");
+	for (int i = 0; i < recipients.size(); i++) {
+		if (recipients[i][0] != '#') {
+			this->sendPrivateMessageToClient(client, recipients[i], message);
+		}
+		else
+			this->sendPrivateMessageToChannel(client, recipients[i], message);
+	}
+}
+
 
 void Server::printAllClients(std::string data) {
 	std::istringstream str(data);
@@ -324,29 +415,82 @@ void Server::printAllClients(std::string data) {
 	}
 }
 
+void Server::sendConfimationMessage(Client &client) {
+	std::string response;
+	response =  "001 RPL_WELCOME Welcome to the Internet Relay Network " + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + "\n";
+	response += "002 RPL_YOURHOST Your host is " + this->serverName + ", running version 5.3\n";
+	response += "003 RPL_CREATED This server was created " + this->serverCreationTime + "\n";
+	response += "004 RPL_MYINFO " + this->serverName + " 5.3 o o\n";
+	response += "This server is running on port " + std::to_string(this->serverPort) + "\n";
+	response += "Created by Tabi3a && Blackhole\n";
+	this->sendMessageToClient(response, client);
+	client.setIsUserRegistered(true);
+}
+
 bool Server::processClientData(Client &client, std::string data) {
 
+	this->fdToClient[client.getSocketfd()].parseIrcMessage(data);
+	std::string command = this->fdToClient[client.getSocketfd()].getCommand();
+	// print parameters
+	std::cout << "Activit detected: Client number " << client.getSocketfd() << "------------------------------------------"  << std::endl;
+	std::cout << "command: [" << command <<"]"<< std::endl;
+	std::cout << "parameters: ";
+	for (int i = 0; i < this->fdToClient[client.getSocketfd()].getParameters().size(); i++) {
+		std::cout << "[" << this->fdToClient[client.getSocketfd()].getParameters()[i] << "] ";
+	}
+	std::cout << std::endl;
+	// check not enough parameters
+	if (command != "" && this->fdToClient[client.getSocketfd()].getParameters().size() == 0) {
+		std::string response = "461 ERR_NEEDMOREPARAMS Not enough parameters\n";
+		sendMessageToClient(response, client);
+		return false;
+	}
 	// 1.AUTHENTICATION
-	std::string password, nickname, username, realname;
-	parseData(password, nickname, username, realname, data);
-	std::cout << "password {" << password << "}" << std::endl;
-	std::cout << "this->password {" << this->password << "}" << std::endl;
-	if (!client.getIsAuthenticated()) {
-		if (!client.authenticate(this->password, password, data)){
-			std::cout << "Error in authentication" << std::endl;
-			return false;
+	if (command == "PASS" || command == "pass") {
+		if (!client.getIsAuthenticated()) {
+			if (!client.authenticate(this->password)){
+				return false;
+			}
+		}
+		else {
+			std::string response = "462 ERR_ALREADYREGISTERED You may not reregister\n";
+			sendMessageToClient(response, client);
 		}
 	}
+	if (!client.getIsAuthenticated()) {
+		std::string response = "451 ERR_NOTREGISTERED You have not registered yet\n";
+		sendMessageToClient(response, client);
+		return false;
+	}
 	// 2. NICKNAME
-	this->handleNickCommand(client, nickname);
+	if (command == "NICK" || command == "nick")
+		this->handleNickCommand(client);
 	// 3. USERNAME
-	this->handleUserCommand(client, username, realname);
+	if (command == "USER" || command == "user")
+		this->handleUserCommand(client);
 	// 4. JOIN
-	this->handleJoinCommand(client, data);
+	if (command == "JOIN" || command == "join")
+		this->handleJoinCommand(client);
 	// 5. PRIVMSG
-	this->handlePrivateMessageCommand(client, data);
-	// 6. PRINT
-	this->printAllClients(data);
+	if (command == "PRIVMSG" || command == "privmsg")
+		this->handlePrivateMessageCommand(client);
+	// 6. KICK
+	// 7. INVITE
+	// 9. TOPIC
+	// 8. MODE
+	// 7. PART
+	// 6. QUIT
+	// 5. PRINT
+	if (command == "PRINT" || command == "print")
+		this->printAllClients(data);
+	std::cout << "client info: " << std::endl;
+	std::cout << "nickname: [" << client.getNickname() << "]" << std::endl;
+	std::cout << "username: [" << client.getUsername() << "]" << std::endl;
+	std::cout << "realname: [" << client.getRealname() << "]" << std::endl;
+	std::cout << "isAuthenticated: [" << (client.getIsAuthenticated() ? "YES" : "NO") << "]" << std::endl;
+	std::cout << "isOperator: [" << (client.getIsOperator() ? "YES" : "NO") << "]" << std::endl;
+	if (!client.getIsUserRegistered() && client.getIsAuthenticated() && client.getNickname() != "" && client.getUsername() != "")
+		this->sendConfimationMessage(client);
 	return true;
 }
 
@@ -355,15 +499,29 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 	this->fdToBuffer[client.getSocketfd()] += data;
 	// check if the buffer contains a complete message
 	std::string buffer = this->fdToBuffer[client.getSocketfd()];
-	int pos = buffer.find("\n");
+	size_t pos = buffer.find("\r\n");
+	size_t pos2 = buffer.find("\n");
 	if (pos != std::string::npos) {
-		// process the message
-		if (!this->processClientData(client, buffer)) {
-			std::cout << "Error in processingClientdata" << std::endl;
-			this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
-			return false;
+		std::vector<std::string> cmds = split(buffer, "\r\n");
+		for (int i = 0; i < cmds.size() - 1; i++) {
+			std::cout << "(" << cmds[i] << ")" << std::endl;
+			if (!this->processClientData(client, cmds[i])) {
+				this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
+				return false;
+			}
 		}
-		this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next command.
+		this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
+	}
+	else if (pos2 != std::string::npos) {
+		std::vector<std::string> cmds = split(buffer, "\n");
+		for (int i = 0; i < cmds.size() - 1; i++) {
+			std::cout << "(" << cmds[i] << ")" << std::endl;
+			if (!this->processClientData(client, cmds[i])) {
+				this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
+				return false;
+			}
+		}
+		this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
 	}
 	return true;
 }
@@ -386,11 +544,8 @@ bool Server::acceptNewMessage(int socketfd) {
 	// process the message
 	std::string data = std::string(buffer, 0, bytesReceived);
 	if (!this->handleRecievedData(this->fdToClient[socketfd], data)) {
-		std::cout << "Error in handling Recieved data" << std::endl;
 		return false;
 	}
-	// std::cout << "{" << data << "}" << std::endl;
-	// this->fdToClient[socketfd].printClientInfo();
 	return true;
 }
 
@@ -439,7 +594,6 @@ void Server::startServer() {
 	this->handleEvents();
 	// close the server socket
 }
-
 
 Server::~Server()
 {

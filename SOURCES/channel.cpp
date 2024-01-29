@@ -1,6 +1,7 @@
-# include "../HEADERS/all_headers.hpp"
+# include "../HEADERS/channel.hpp"
 # include "../HEADERS/client.hpp"
 # include "../HEADERS/server.hpp"
+
 
 Channel::Channel(std::string name)
 {
@@ -16,6 +17,12 @@ Channel::Channel(std::string name)
     this->fdToUser = std::map<int, Client>();
     this->ejectedClients = std::map<int, Client>();
     this->ejectedfds = std::vector<int>();
+    this->operators = std::vector<Client>();
+    this->fdToOperator = std::map<int, Client>();
+    this->creatorNickname = "";
+    this->creationTime = Server::getCurrentTime();
+    this->topicTime = Server::getCurrentTime();
+    this->topicSetterNickname = "";
 }
 
 Channel::Channel(std::string name, std::string password)
@@ -32,6 +39,12 @@ Channel::Channel(std::string name, std::string password)
     this->fdToUser = std::map<int, Client>();
     this->ejectedClients = std::map<int, Client>();
     this->ejectedfds = std::vector<int>();
+    this->operators = std::vector<Client>();
+    this->fdToOperator = std::map<int, Client>();
+    this->creatorNickname = "";
+    this->creationTime = Server::getCurrentTime();
+    this->topicTime = Server::getCurrentTime();
+    this->topicSetterNickname = "";
 }
 
 Channel::Channel(std::string name, std::string password, std::string topic)
@@ -48,6 +61,12 @@ Channel::Channel(std::string name, std::string password, std::string topic)
     this->fdToUser = std::map<int, Client>();
     this->ejectedClients = std::map<int, Client>();
     this->ejectedfds = std::vector<int>();
+    this->operators = std::vector<Client>();
+    this->fdToOperator = std::map<int, Client>();
+    this->creatorNickname = "";
+    this->creationTime = Server::getCurrentTime();
+    this->topicTime = Server::getCurrentTime();
+    this->topicSetterNickname = "";
 }
 
 Channel::Channel()
@@ -64,6 +83,12 @@ Channel::Channel()
     this->fdToUser = std::map<int, Client>();
     this->ejectedClients = std::map<int, Client>();
     this->ejectedfds = std::vector<int>();
+    this->operators = std::vector<Client>();
+    this->fdToOperator = std::map<int, Client>();
+    this->creatorNickname = "";
+    this->creationTime = Server::getCurrentTime();
+    this->topicTime = Server::getCurrentTime();
+    this->topicSetterNickname = "";
 }
 
 Channel::~Channel()
@@ -196,6 +221,27 @@ std::vector<int> Channel::getEjectedfds()
     return this->ejectedfds;
 }
 
+std::string Channel::getCreatorNickname()
+{
+    return this->creatorNickname;
+}
+
+std::string Channel::getCreationTime()
+{
+    return this->creationTime;
+}
+
+std::string Channel::getTopicTime()
+{
+    return this->topicTime;
+}
+
+std::string Channel::getTopicSetterNickname()
+{
+    return this->topicSetterNickname;
+}
+
+// setters
 void Channel::setName(std::string name)
 {
     this->name = name;
@@ -204,6 +250,7 @@ void Channel::setName(std::string name)
 void Channel::setTopic(std::string topic)
 {
     this->topic = topic;
+    this->topicTime = Server::getCurrentTime();
 }
 
 void Channel::setIsInviteOnly(bool isInviteOnly)
@@ -264,4 +311,24 @@ void Channel::setEjectedClients(std::map<int, Client> ejectedClients)
 void Channel::setEjectedfds(std::vector<int> ejectedfds)
 {
     this->ejectedfds = ejectedfds;
+}
+
+void Channel::setCreatorNickname(std::string creatorNickname)
+{
+    this->creatorNickname = creatorNickname;
+}
+
+void Channel::setCreationTime(std::string creationTime)
+{
+    this->creationTime = creationTime;
+}
+
+void Channel::setTopicTime(std::string topicTime)
+{
+    this->topicTime = topicTime;
+}
+
+void Channel::setTopicSetterNickname(std::string topicSetterNickname)
+{
+    this->topicSetterNickname = topicSetterNickname;
 }

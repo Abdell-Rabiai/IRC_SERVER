@@ -1,4 +1,5 @@
 # include "../HEADERS/client.hpp"
+# include "../HEADERS/channel.hpp"
 
 Client::Client() {
 	this->socketfd = -1;
@@ -8,6 +9,11 @@ Client::Client() {
 	this->hostname = "";
 	this->isOperator = false;
 	this->isAuthenticated = false;
+	this->port = "";
+	this->command = "";
+	this->parameters = {};
+	this->trailing = "";
+	this->isUserRegistered = false;
 }
 
 Client::Client(int socketfd) {
@@ -18,6 +24,11 @@ Client::Client(int socketfd) {
 	this->hostname = "";
     this->isOperator = false;
     this->isAuthenticated = false;
+	this->port = "";
+	this->command = "";
+	this->parameters = {};
+	this->trailing = "";
+	this->isUserRegistered = false;
 }
 
 Client::Client(int socketfd, std::string nickname, std::string username) {
@@ -26,6 +37,13 @@ Client::Client(int socketfd, std::string nickname, std::string username) {
     this->username = username;
     this->isOperator = false;
     this->isAuthenticated = false;
+	this->realname = "";
+	this->hostname = "";
+	this->port = "";
+	this->command = "";
+	this->parameters = {};
+	this->trailing = "";
+	this->isUserRegistered = false;
 }
 
 Client::Client(int socketfd, std::string nickname, std::string username, std::string realname) {
@@ -35,6 +53,12 @@ Client::Client(int socketfd, std::string nickname, std::string username, std::st
 	this->realname = realname;
     this->isOperator = false;
     this->isAuthenticated = false;
+	this->hostname = "";
+	this->port = "";
+	this->command = "";
+	this->parameters = {};
+	this->trailing = "";
+	this->isUserRegistered = false;
 }
 
 Client::~Client() {
@@ -45,27 +69,79 @@ bool Client::operator==(const Client &client) const {
 	return this->socketfd == client.socketfd;
 }
 
+void Client::parseIrcMessage(std::string buffer) {
+	std::string command;
+	std::vector<std::string> parameters;
+	std::string trailing;
+
+	// clear existing data
+	this->command.clear();
+	this->parameters.clear();
+	this->trailing.clear();
+
+	int i = buffer.find_first_of(' ');
+	if (i != -1) {
+		command = buffer.substr(0, i);
+		buffer = buffer.substr(i + 1, buffer.length() - i - 1);
+	}
+	else {
+		command = buffer;
+		buffer = "";
+	}
+
+	i = buffer.find_first_of(':');
+	if (i != -1) {
+		trailing = buffer.substr(i + 1, buffer.length() - i - 1);
+		buffer = buffer.substr(0, i - 1);
+	}
+
+	while (buffer.length() > 0) {
+		int j = buffer.find_first_of(':');
+		if (j != -1)
+			break ;
+		i = buffer.find_first_of(' ');
+		if (i == -1) {
+			parameters.push_back(buffer);
+			buffer = "";
+		}
+		else {
+			std::string str = buffer.substr(0, i);
+			if (str.length() > 0){
+				parameters.push_back(str);
+			}
+			buffer = buffer.substr(i + 1, buffer.length() - i - 1);
+		}
+	}
+	if (trailing.length() > 0) {
+		parameters.push_back(trailing);
+	}
+	this->command = command;
+	this->parameters = parameters;
+	this->trailing = trailing;
+}
+
 // methods
-bool Client::authenticate(std::string _password, std::string password, std::string data) {
-		std::cout << "{" << data <<"}" << std::endl;
-		int i = data.find_first_of(' ');
-		std::string command = data.substr(0, i);
-		// std::string password = data.substr(i + 1, data.length() - i - 1);
-		std::string msg;
-		if (command != "PASS"){
-			msg = "You need to authenticate first\n";
-            send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
-            return false;
-        }
-        else if (password != _password) {
-            msg = "Wrong password\n";
-            send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
-            return false;
-        }
-		msg = "Congrats!! You are authenticated successfully\n";
-		send(this->getSocketfd(), msg.c_str(), msg.length(), 0);
-		this->setIsAuthenticated(true);
-        return true;
+bool Client::authenticate(std::string ServerPassword) {
+	std::string response;
+	std::string password = this->parameters[0];
+	if (password != ServerPassword) {
+		response = "464 ERR_PASSWDMISMATCH ERROR :Password incorrect.\n";
+		send(this->getSocketfd(), response.c_str(), response.length(), 0);
+		return false;
+	}
+	response = "Congrats!! You are authenticated successfully\nto Confirm tour registration enter: \nNICK <nickname>\nUSER <username>\n";
+	send(this->getSocketfd(), response.c_str(), response.length(), 0);
+	this->setIsAuthenticated(true);
+	return true;
+}
+
+bool Client::confirmRegistration() {
+	if (this->getIsAuthenticated() == true) {
+		if (this->getNickname() != "" && this->getUsername() != "") {
+			return true;
+		}
+	}
+	return false;
 }
 
 void Client::becomeOperator() {
@@ -117,6 +193,26 @@ std::string Client::getPort() {
     return this->port;
 }
 
+std::vector<std::string> Client::getBuffer() {
+	return this->buffer;
+}
+
+std::string Client::getCommand() {
+	return this->command;
+}
+
+std::vector<std::string> Client::getParameters() {
+	return this->parameters;
+}
+
+std::string Client::getTrailing() {
+	return this->trailing;
+}
+
+bool Client::getIsUserRegistered() {
+	return this->isUserRegistered;
+}
+
 // setters
 
 void Client::setSocketfd(int socketfd) {
@@ -149,6 +245,26 @@ void Client::setHostName(std::string hostname) {
 
 void Client::setPort(std::string port) {
     this->port = port;
+}
+
+void Client::setBuffer(std::vector<std::string> buffer) {
+	this->buffer = buffer;
+}
+
+void Client::setCommand(std::string command) {
+	this->command = command;
+}
+
+void Client::setParameters(std::vector<std::string> parameters) {
+	this->parameters = parameters;
+}
+
+void Client::setTrailing(std::string trailing) {
+	this->trailing = trailing;
+}
+
+void Client::setIsUserRegistered(bool isUserRegistered) {
+	this->isUserRegistered = isUserRegistered;
 }
 
 // methods, we'l add them later

@@ -16,6 +16,9 @@ class Server
         int serverSocketfd;
         int serverPort;
         std::string password;
+        std::string serverCreationTime;
+        std::string serverName;
+        std::string serverHostName;
 
         std::vector<int> clientSocketsfds;
         std::vector<Client> clients;
@@ -39,12 +42,19 @@ class Server
         ~Server();
 
         void startServer();
-        void printAllClients(std::string data);
+        std::string getServerIp();
         void stopServer();
         void handleEvents(); // handles events such as new connections, new messages, client disconnected
-
+        static std::string getCurrentTime();
+        void printAllClients(std::string data);
+        void sendConfimationMessage(Client &client);
         int acceptNewConnection(); // accepts a new connection and adds it to the clients list
         // and it returns the socket file descriptor of the new client create by accept
+
+        Client getClientByNickname(std::string nickname);
+        void sendPrivateMessageToClient(Client &client, std::string recipientNickname, std::string message);
+        void sendPrivateMessageToChannel(Client &client, std::string channelName, std::string message);
+
         bool acceptNewMessage(int socketfd); // accepts a new message and processes it
         bool processClientData(Client &client, std::string data);
         void broadcastMessageOnChannel(Channel channel, std::string message);
@@ -52,24 +62,36 @@ class Server
         void removeClient(Client client);
         void removeDisconnectedClient(int &socketfd);
         void addClient(Client client, int socketfd);
-        void handleJoinCommand(Client &client, std::string data);
-        
+
 
         void sendMessageToClient(std::string message , Client client);
         void sendMessageToChannel(std::string message, Channel channel);
         void createChannel(std::string name, std::string password, Client &creator);
         
-        void handleNickCommand(Client &client, std::string nickname);
-        void handleUserCommand(Client &client, std::string username, std::string realname);
-        void logic(std::string channelName, std::string key, Client &creator);
+        void handleNickCommand(Client &client);
+        void handleUserCommand(Client &client);
+        void handleJoinCommand(Client &client);
+        void JoinResponse(Client &client, std::string channelName);
+        bool isChannelExist(std::string channelName);
+        bool isClientInChannel(Client &client, std::string channelName);
+        bool isChannelhasTopic(std::string channelName);
+        bool isChannelHasPassword(std::string channelName);
+        bool isChannelPasswordCorrect(std::string channelName, std::string password);
+        Channel getChannelByName(std::string channelName);
+        void handlePrivateMessageCommand(Client &client);
+
         bool handleRecievedData(Client &client, std::string data);
-        void handlePrivateMessageCommand(Client &client, std::string data);
+        void logic(std::string channelName, std::string key, Client &creator);
 
         // getters
         int getServerSocketfd();
         int getServerPort();
         std::string getPassword();
+        std::string getServerCreationTime();
+        std::string getServerName();
+        std::string getServerHostName();
 
+        std::vector<int> getClientSocketsfds();
         std::vector<Client> getClients();
         std::vector<Client> getOperators();
         std::vector<Channel> getChannels();
@@ -79,6 +101,11 @@ class Server
         void setServerSocketfd(int serverSocketfd);
         void setServerPort(int serverPort);
         void setPassword(std::string password);
+        void setServerCreationTime(std::string serverCreationTime);
+        void setServerName(std::string serverName);
+        void setServerHostName(std::string serverHostName);
+
+        void setClientSocketsfds(std::vector<int> clientSocketsfds);
         void setClients(std::vector<Client> clients);
         void setOperators(std::vector<Client> operators);
         void setChannels(std::vector<Channel> channels);
