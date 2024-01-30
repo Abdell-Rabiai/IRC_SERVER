@@ -418,7 +418,7 @@ void Server::JoinResponse(Client &client, std::string channelName) {
 	// A JOIN message with the client as the message <source> and the channel they have joined as the first parameter of the message.
 	// :<source> JOIN <channel> and <source> ==> <nickname>!<username>@<hostname>
 	std::string broadcastMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@" + this->getServerHostName() + " JOIN " + channelName + "\r\n";
-	this->broadcastMessageOnChannel(this->nameToChannel[channelName], broadcastMessage, client
+	this->broadcastMessageOnChannel(this->nameToChannel[channelName], broadcastMessage, client);
 
 	// 2. Channel topic if available
 	if (this->isChannelhasTopic(channelName)) {

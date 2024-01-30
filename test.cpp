@@ -87,11 +87,3 @@ USER momihamm * 0    :mohammed
 PASS 1337
 NICK black
 USER ahmaymou * 0    :abderhamn hamama
-
-
-to chan
-
-std::string resp = ":" + client.getNICKNAME() + "!" + client.getUSERNAME() + "@" + this->_HostName + " PRIVMSG " this->getChannelName() + " :" + msg + "\r\n";
-std::string resp = ":" + sender.getNICKNAME() + "!" + sender.getUSERNAME() + "@" + this->Hostname + " PRIVMSG " + clientNick + " :" + msg + "\n";
-
-to client
