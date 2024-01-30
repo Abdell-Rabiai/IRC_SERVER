@@ -33,7 +33,7 @@ std::string Server::getServerIp()
 Server::Server(int port, std::string password) {
 	this->serverPort = port;
 	this->password = password;
-	this->serverName = "TABI3A_BLACKHOLE";
+	this->serverName = ":IRC_SERVER";
 	this->serverCreationTime = Server::getCurrentTime();
 	this->serverSocketfd = serverSocket.getFd();
 	this->serverHostName = getServerIp();
@@ -285,6 +285,18 @@ void Server::broadcastMessageOnChannel(Channel channel, std::string message) {
 	}
 }
 
+void Server::broadcastMessageOnChannel(Channel channel, std::string message, Client sender) {
+	// except the sender
+	if (this->isChannelExist(channel.getName())) {
+		for (int i = 0; i < channel.getUsers().size(); i++) {
+			if (channel.getUsers()[i].getSocketfd() >= 0) {
+				if (channel.getUsers()[i].getSocketfd() != sender.getSocketfd())
+					sendMessageToClient(message, channel.getUsers()[i]);
+			}
+		}
+	}
+}
+
 
 void Server::handleNickCommand(Client &client) {
 	std::string nickname = this->fdToClient[client.getSocketfd()].getParameters()[0];
@@ -355,6 +367,7 @@ void Server::createChannel(std::string name, std::string password, Client &creat
 }
 
 void Server::logic(std::string channelName, std::string key, Client &creator) {
+	std::string msg = "";
 	// if the channel doesn't exist create it
 	if (this->nameToChannel.find(channelName) == this->nameToChannel.end()) {
 		if (!key.empty())
@@ -366,21 +379,20 @@ void Server::logic(std::string channelName, std::string key, Client &creator) {
 	else {
 		// check if the client is already in the channel
 		if (this->nameToChannel[channelName].isUserInChannel(creator)) {
-			std::string msg = "443 ERR_USERONCHANNEL " + creator.getNickname() + " " + channelName + " :is already on channel\r\n"; 
+			msg = "443 ERR_USERONCHANNEL " + creator.getNickname() + " " + channelName + " :is already on channel\r\n"; 
 			this->sendMessageToClient(msg, creator);
-			return;
+			return ;
 		}
 		// check if the channel has a password
 		if (this->nameToChannel[channelName].getKey() == key || this->nameToChannel[channelName].getKey() == "") {
 			this->nameToChannel[channelName].addUser(creator);
-			std::string msg = "You have joined the channel " + channelName + " as a Regular User\r\n";
+			msg = "121 You have joined the channel " + channelName + " as a Regular User\r\n";
 			this->sendMessageToClient(msg, creator);
 		}
 		else {
-			std::string msg = "Please enter the correct password to join the channel " + channelName + "\r\n";
-			//ERR_BADCHANNELKEY (475)
 			msg = "475 ERR_BADCHANNELKEY " + channelName + " Cannot join channel (+k) - bad key\r\n";
 			this->sendMessageToClient(msg, creator);
+			return ;
 		}
 	}
 	this->JoinResponse(creator, channelName);
@@ -400,13 +412,13 @@ std::vector<std::string>  split(std::string str, std::string delimiter) {
 }
 
 void Server::JoinResponse(Client &client, std::string channelName) {
-	// 1. JOIN message to the client
-	std::string joinMessage = "JOIN " + channelName + "\n";
+	// 1. JOIN message to the client and notify all users in the channel
+	std::string joinMessage = "JOIN " + channelName + "\r\n";
 	this->sendMessageToClient(joinMessage, client);
 	// A JOIN message with the client as the message <source> and the channel they have joined as the first parameter of the message.
 	// :<source> JOIN <channel> and <source> ==> <nickname>!<username>@<hostname>
-	std::string broadcastMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " JOIN " + channelName + "\n";
-	this->sendMessageToClient(broadcastMessage, client);
+	std::string broadcastMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@" + this->getServerHostName() + " JOIN " + channelName + "\r\n";
+	this->broadcastMessageOnChannel(this->nameToChannel[channelName], broadcastMessage, client
 
 	// 2. Channel topic if available
 	if (this->isChannelhasTopic(channelName)) {
@@ -414,20 +426,21 @@ void Server::JoinResponse(Client &client, std::string channelName) {
 		std::string topicMessage;
 		std::string timeSetTopicByWhoMessage;
 		topic = this->nameToChannel[channelName].getTopic();
-		topicMessage = "332 " + channelName + " :" + topic + "\n";
+		topicMessage = "332 " + channelName + " :" + topic + "\r\n";
 		this->sendMessageToClient(topicMessage, client);
-		timeSetTopicByWhoMessage = "333 " + channelName + " " + this->nameToChannel[channelName].getCreatorNickname() + " " + this->nameToChannel[channelName].getTopicTime() + "\n";
+		timeSetTopicByWhoMessage = "333 " + channelName + " " + this->nameToChannel[channelName].getCreatorNickname() + " " + this->nameToChannel[channelName].getTopicTime() + "\r\n";
 		this->sendMessageToClient(timeSetTopicByWhoMessage, client);
 	}
 	// 3. list of users in the channel
 	std::string ListMessage;
 	std::vector<Client> users = this->nameToChannel[channelName].getUsers();
 	for (int i = 0; i < users.size(); i++) {
-		ListMessage = "353 " + client.getNickname() + " = " + channelName + " :" + users[i].getNickname() + "\n";
+		ListMessage = "353 " + client.getNickname() + " = " + channelName + " :" + users[i].getNickname() + "\r\n";
 		this->sendMessageToClient(ListMessage, client);
 	}
 	// 4. end of list
-	std::string endOfListMessage = "366 " + channelName + " :End of NAMES list\n";
+	std::string endOfListMessage = "366 " + channelName + " :End of NAMES list\r\n";
+	this->sendMessageToClient(endOfListMessage, client);
 }
 
 void Server::handleJoinCommand(Client &client) {
@@ -472,8 +485,8 @@ void Server::sendPrivateMessageToClient(Client &client, std::string recipientNic
 void Server::sendPrivateMessageToChannel(Client &client, std::string channelName, std::string message) {
 	if (this->nameToChannel.find(channelName) != this->nameToChannel.end()) {
 		if (this->nameToChannel[channelName].isUserInChannel(client)) {
-			std::string msgToLimChat = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + channelName + " :" + message + "\r\n";
-			this->broadcastMessageOnChannel(this->nameToChannel[channelName], msgToLimChat);
+			std::string msgToLimChat = ":" + client.getNickname() + "!" + client.getUsername() + "@" + this->serverHostName + " PRIVMSG " + channelName + " :" + message + "\r\n";
+			this->broadcastMessageOnChannel(this->nameToChannel[channelName], msgToLimChat, client);
 		}
 		else {
 			std::string msg = "404 " + channelName + " Cannot send to channel\r\n";

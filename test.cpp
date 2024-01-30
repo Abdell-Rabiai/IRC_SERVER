@@ -74,3 +74,24 @@ int main() {
     parseIrcMessage(buffer);
     return 0;
 }
+
+
+PASS 1337
+NICK tabi3a
+USER arabiai * 0    :abdelouahed
+
+PASS 1337
+NICK moha
+USER momihamm * 0    :mohammed
+
+PASS 1337
+NICK black
+USER ahmaymou * 0    :abderhamn hamama
+
+
+to chan
+
+std::string resp = ":" + client.getNICKNAME() + "!" + client.getUSERNAME() + "@" + this->_HostName + " PRIVMSG " this->getChannelName() + " :" + msg + "\r\n";
+std::string resp = ":" + sender.getNICKNAME() + "!" + sender.getUSERNAME() + "@" + this->Hostname + " PRIVMSG " + clientNick + " :" + msg + "\n";
+
+to client

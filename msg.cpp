@@ -1,14 +1,4 @@
-PASS 1337
-NICK tabi3a
-USER arabiai * 0    :abdelouahed
 
-PASS 1337
-NICK moha
-USER momihamm * 0    :mohammed
-
-PASS 1337
-NICK black
-USER ahmaymou * 0    :abderhamn hamama
 
 
 void Channel::notifyUsers(int fd){
