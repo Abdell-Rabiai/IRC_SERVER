@@ -351,6 +351,21 @@ void parseData(std::string &password, std::string &nickname, std::string &userna
     }
 }
 
+// toify users ==> std::string notifyusers = ":" + this->_joinedUsers.find(fd)->second.getNICKNAME() + "!" + this->_joinedUsers.find(fd)->second.getUSERNAME() + "@" +  this->_HostName + " JOIN " + this->getChannelName() + "\r\n";
+
+/*
+
+RPL_NAMREPLY(fd, nickName,  chName, members)
+{
+	std::string message = ":IrcTheThreeMusketeers 353 " + nickName + " = " + chName + " :" + members + "\r\n";
+	writeMessageToClient_fd(fd, message);
+}
+RPL_ENDOFNAMES(fd, nickName,  chName)
+{
+	std::string message = ":IrcTheThreeMusketeers 366 " + nickName + " " + chName + " :End of /NAMES list\r\n";
+	writeMessageToClient_fd(fd, message);
+}
+*/
 void Server::createChannel(std::string name, std::string password, Client &creator) {
 	Channel channel(name);
 	if (password != "")
@@ -362,7 +377,7 @@ void Server::createChannel(std::string name, std::string password, Client &creat
 	creator.setIsOperator(true);
 	this->channels.push_back(channel);
 	this->nameToChannel.insert(std::pair<std::string, Channel>(name, channel));
-	std::string msg = "You have created the channel {" + name  + "} as an Operator using the password {" + password + "}\r\n";
+	std::string msg = "330 " + creator.getNickname() + "!" + creator.getUsername() + "@" + this->serverHostName + " : Your have created the channel " + name + " as an Operator\r\n";
 	this->sendMessageToClient(msg, creator);
 }
 
@@ -379,18 +394,19 @@ void Server::logic(std::string channelName, std::string key, Client &creator) {
 	else {
 		// check if the client is already in the channel
 		if (this->nameToChannel[channelName].isUserInChannel(creator)) {
-			msg = "443 ERR_USERONCHANNEL " + creator.getNickname() + " " + channelName + " :is already on channel\r\n"; 
+			// msg = "443 " + creator.getNickname() + " " + channelName + " :is already on channel\r\n"; 
+			msg = "443 " + creator.getNickname() + "!" + creator.getUsername() + "@" + this->serverHostName + " " + channelName + " :is already on channel\r\n";
 			this->sendMessageToClient(msg, creator);
 			return ;
 		}
 		// check if the channel has a password
 		if (this->nameToChannel[channelName].getKey() == key || this->nameToChannel[channelName].getKey() == "") {
 			this->nameToChannel[channelName].addUser(creator);
-			msg = "121 You have joined the channel " + channelName + " as a Regular User\r\n";
+			msg = "121 " + creator.getNickname() + "!" + creator.getUsername() + "@" + this->serverHostName + " You have joined the channel " + channelName + " as a Regular User\r\n";
 			this->sendMessageToClient(msg, creator);
 		}
 		else {
-			msg = "475 ERR_BADCHANNELKEY " + channelName + " Cannot join channel (+k) - bad key\r\n";
+			msg = "475 " + channelName + " Cannot join channel (+k) - bad key\r\n";
 			this->sendMessageToClient(msg, creator);
 			return ;
 		}
@@ -412,13 +428,8 @@ std::vector<std::string>  split(std::string str, std::string delimiter) {
 }
 
 void Server::JoinResponse(Client &client, std::string channelName) {
-	// 1. JOIN message to the client and notify all users in the channel
-	std::string joinMessage = "JOIN " + channelName + "\r\n";
-	this->sendMessageToClient(joinMessage, client);
-	// A JOIN message with the client as the message <source> and the channel they have joined as the first parameter of the message.
-	// :<source> JOIN <channel> and <source> ==> <nickname>!<username>@<hostname>
 	std::string broadcastMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@" + this->getServerHostName() + " JOIN " + channelName + "\r\n";
-	this->broadcastMessageOnChannel(this->nameToChannel[channelName], broadcastMessage, client);
+	this->broadcastMessageOnChannel(this->nameToChannel[channelName], broadcastMessage);
 
 	// 2. Channel topic if available
 	if (this->isChannelhasTopic(channelName)) {
@@ -426,18 +437,20 @@ void Server::JoinResponse(Client &client, std::string channelName) {
 		std::string topicMessage;
 		std::string timeSetTopicByWhoMessage;
 		topic = this->nameToChannel[channelName].getTopic();
-		topicMessage = "332 " + channelName + " :" + topic + "\r\n";
+		topicMessage = "332 " + client.getNickname() + " " + channelName + " :" + topic + "\r\n";
 		this->sendMessageToClient(topicMessage, client);
-		timeSetTopicByWhoMessage = "333 " + channelName + " " + this->nameToChannel[channelName].getCreatorNickname() + " " + this->nameToChannel[channelName].getTopicTime() + "\r\n";
+		timeSetTopicByWhoMessage = "333 " + client.getNickname() + " " + channelName + " " + this->nameToChannel[channelName].getCreatorNickname() + " " + this->nameToChannel[channelName].getCreationTime() + "\r\n";
 		this->sendMessageToClient(timeSetTopicByWhoMessage, client);
 	}
 	// 3. list of users in the channel
 	std::string ListMessage;
 	std::vector<Client> users = this->nameToChannel[channelName].getUsers();
+	std::string joinedUsers = "";
 	for (int i = 0; i < users.size(); i++) {
-		ListMessage = "353 " + client.getNickname() + " = " + channelName + " :" + users[i].getNickname() + "\r\n";
-		this->sendMessageToClient(ListMessage, client);
+		joinedUsers += users[i].getNickname() + " ";
 	}
+	ListMessage = "353 " + client.getNickname() + " = " + channelName + " :" + joinedUsers + "\r\n";
+	this->sendMessageToClient(ListMessage, client);
 	// 4. end of list
 	std::string endOfListMessage = "366 " + channelName + " :End of NAMES list\r\n";
 	this->sendMessageToClient(endOfListMessage, client);
@@ -592,7 +605,6 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 9. TOPIC
 	// 8. MODE
 	// 7. PART
-	// 6. QUIT
 	// 5. PRINT
 	if (command == "PRINT" || command == "print")
 		this->printAllClients(data);
