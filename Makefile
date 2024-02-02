@@ -25,7 +25,6 @@ MAIN_SRC = main.cpp
 FLAGS =  -g3 -fsanitize=address #-Wall -Werror -Wextra 
 
 HEADER = HEADERS/$(wildcard *.hpp)
-
 CC = c++ -std=c++11
 
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRCS:.cpp=.o)) 

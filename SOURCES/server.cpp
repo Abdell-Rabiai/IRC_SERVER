@@ -7,6 +7,14 @@ Server::Server() {
 	this->serverSocketfd = serverSocket.getFd();
 }
 
+bool Server::isOperatorInChannel(Client client, Channel channel) {
+	for (int i = 0; i < channel.getOperators().size(); i++) {
+		if (channel.getOperators()[i].getNickname() == client.getNickname())
+			return true;
+	}
+	return false;
+}
+
 std::string Server::getCurrentTime() {
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
@@ -176,6 +184,12 @@ Channel Server::getChannelByName(std::string channelName) {
 	if (this->isChannelExist(channelName))
 		return this->nameToChannel[channelName];
 	return Channel();
+}
+
+Channel &Server::getChannelRefByName(std::string channelName) {
+	if (this->isChannelExist(channelName))
+		return this->nameToChannel[channelName];
+	return this->nameToChannel[""];
 }
 
 bool Server::isClientInChannel(Client &client, std::string channelName) {
@@ -600,11 +614,29 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 5. PRIVMSG
 	if (command == "PRIVMSG" || command == "privmsg")
 		this->handlePrivateMessageCommand(client);
+	
 	// 6. KICK
+	if (command == "KICK" || command == "kick")
+		this->handleKickCommand(client);
 	// 7. INVITE
-	// 9. TOPIC
+	if (command == "INVITE" || command == "invite")
+		this->handleInviteCommand(client);
+	// 8. TOPIC
+	if (command == "TOPIC" || command == "topic")
+		this->handleTopicCommand(client);
 	// 8. MODE
+	if (command == "MODE" || command == "mode")
+		this->handleModeCommand(client);
 	// 7. PART
+	if (command == "PART" || command == "part")
+		this->handlePartCommand(client);
+	if (command == "NOTICE" || command == "notice")
+		this->handleNoticeCommand(client);
+	if (command == "!quiz" || command == "!QUIZ" || command == "!date") {
+		std::cout << "bbbbbbbbbbbbbbbbbbbbbUse: " << command << std::endl;
+		this->launchBot(client);
+	}
+	// 6. QUIT
 	// 5. PRINT
 	if (command == "PRINT" || command == "print")
 		this->printAllClients(data);
@@ -622,6 +654,7 @@ bool Server::processClientData(Client &client, std::string data) {
 bool Server::handleRecievedData(Client &client, std::string data) {
 	// Append racieved data to the buffer of the client
 	this->fdToBuffer[client.getSocketfd()] += data;
+	client.setBuffer(this->fdToBuffer[client.getSocketfd()]);
 	// check if the buffer contains a complete message
 	std::string buffer = this->fdToBuffer[client.getSocketfd()];
 	size_t pos = buffer.find("\r\n");
