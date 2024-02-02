@@ -193,7 +193,7 @@ std::string Client::getPort() {
     return this->port;
 }
 
-std::vector<std::string> Client::getBuffer() {
+std::string Client::getBuffer() {
 	return this->buffer;
 }
 
@@ -247,7 +247,7 @@ void Client::setPort(std::string port) {
     this->port = port;
 }
 
-void Client::setBuffer(std::vector<std::string> buffer) {
+void Client::setBuffer(std::string buffer) {
 	this->buffer = buffer;
 }
 

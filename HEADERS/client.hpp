@@ -14,7 +14,7 @@ class Client
 		std::string port;
 		bool isOperator;
 		bool isAuthenticated;
-		std::vector<std::string> buffer;
+		std::string buffer;
 
 		std::string command;
 		std::vector<std::string> parameters;
@@ -67,7 +67,7 @@ class Client
 		std::string getRealname();
 		bool getIsOperator();
 		bool getIsAuthenticated();
-		std::vector<std::string> getBuffer();
+		std::string getBuffer();
 		std::string getCommand();
 		std::vector<std::string> getParameters();
 		std::string getTrailing();
@@ -82,7 +82,7 @@ class Client
 		void setRealname(std::string realname);
 		void setIsOperator(bool isOperator);
 		void setIsAuthenticated(bool isAuthenticated);
-		void setBuffer(std::vector<std::string> buffer);
+		void setBuffer(std::string buffer);
 		void setCommand(std::string command);
 		void setParameters(std::vector<std::string> parameters);
 		void setTrailing(std::string trailing);
