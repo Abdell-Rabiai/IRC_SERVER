@@ -428,6 +428,7 @@ std::vector<std::string>  split(std::string str, std::string delimiter) {
 }
 
 void Server::JoinResponse(Client &client, std::string channelName) {
+	std::string msg = "";
 	std::string broadcastMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@" + this->getServerHostName() + " JOIN " + channelName + "\r\n";
 	this->broadcastMessageOnChannel(this->nameToChannel[channelName], broadcastMessage);
 
