@@ -22,10 +22,10 @@ void Server::handleJoinCommand(Client &client, std::string data) {
 		std::cout << "channels.size() {" << channels.size() << "}" << std::endl;
 		for (int i = 0; i < channels.size(); i++) {
 			if (i < passwords.size()) {
-				this->logic(channels[i], passwords[i], client);
+				this->join_channel(channels[i], passwords[i], client);
 			}
 			else {
-				this->logic(channels[i], "", client);
+				this->join_channel(channels[i], "", client);
 			}
 		}
 	}

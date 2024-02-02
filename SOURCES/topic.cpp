@@ -15,11 +15,6 @@ TOPIC #test                     ; Checking the topic for "#test"
 void Server::viewTopic(Client &client, std::string channelName, Channel &channel)
 {
     std::string msg;
-    if (channel.getIsRestrictedTopic() && !this->isOperatorInChannel(client, channel)) {
-        msg = "484 " + client.getNickname() + " " + channelName + " :Cannot change topic for channel" + "\r\n";
-        this->sendMessageToClient(msg, client);
-        return;
-    }
     if (channel.getName().empty()) {
         msg = "403 "  + client.getNickname() + " " + channelName + " :No such channel" + "\r\n";
         this->sendMessageToClient(msg, client);
@@ -55,6 +50,11 @@ void Server::handleTopicCommand(Client &client) {
     else if (client.getParameters().size() == 0)
     {
         msg = "461 " + client.getNickname() + " TOPIC :Not enough parameters" + "\r\n";
+        this->sendMessageToClient(msg, client);
+        return;
+    }
+    else if (channel.getIsRestrictedTopic() ) {
+        msg = "484 " + client.getNickname() + " " + channelName + " :Cannot change topic for channel" + "\r\n";
         this->sendMessageToClient(msg, client);
         return;
     }

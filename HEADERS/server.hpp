@@ -82,7 +82,7 @@ class Server
         void handlePrivateMessageCommand(Client &client);
 
         bool handleRecievedData(Client &client, std::string data);
-        void logic(std::string channelName, std::string key, Client &creator);
+        void join_channel(std::string channelName, std::string key, Client &creator);
 
         // getters
         int getServerSocketfd();
@@ -129,6 +129,7 @@ class Server
         bool isOperatorInChannel(Client client, Channel channel);
         void do_modes(Client &client, Channel &channel, std::vector<std::string> modes);
         void launchBot(Client &client);
+        int check_param(int i, std::vector<std::string> modes, Client &client);
 
 };
 

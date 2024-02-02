@@ -18,7 +18,8 @@ void Server::handlePartCommand(Client &client) {
         this->broadcastMessageOnChannel(channel, msg);
         return;
     }
-    msg = "341 " + client.getNickname() + " part :parted by " + client.getNickname();
+    // msg = "341 " + client.getNickname() + " part :parted by " + client.getNickname();
+    msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PART " + channelName + " : PARTED";
     std::string reason = client.getTrailing();
     if (!reason.empty())
         msg += " (" + reason + ")\r\n";

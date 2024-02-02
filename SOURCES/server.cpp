@@ -314,6 +314,11 @@ void Server::broadcastMessageOnChannel(Channel channel, std::string message, Cli
 
 void Server::handleNickCommand(Client &client) {
 	std::string nickname = this->fdToClient[client.getSocketfd()].getParameters()[0];
+	if (this->getClientByNickname(nickname).getSocketfd() != -1) {
+		std::string msg = "433 " + nickname + " :Nickname is already in use\r\n";
+		this->sendMessageToClient(msg, client);
+		close(client.getSocketfd());
+	}
 	if (nickname != "") {
 		client.setNickname(nickname);
 		std::string msg = "your nickname is set as: " + client.getNickname() + "\r\n";
@@ -395,7 +400,7 @@ void Server::createChannel(std::string name, std::string password, Client &creat
 	this->sendMessageToClient(msg, creator);
 }
 
-void Server::logic(std::string channelName, std::string key, Client &creator) {
+void Server::join_channel(std::string channelName, std::string key, Client &creator) {
 	std::string msg = "";
 	// if the channel doesn't exist create it
 	if (this->nameToChannel.find(channelName) == this->nameToChannel.end()) {
@@ -406,6 +411,20 @@ void Server::logic(std::string channelName, std::string key, Client &creator) {
 	}
 	// if the channel exists
 	else {
+		// check if the channel is invite only
+		Channel channel = this->nameToChannel[channelName];
+		if (channel.getIsInviteOnly()) {
+			// check if the client is invited
+			msg = "473 " + creator.getNickname() + " " + channelName + " :Cannot join channel (+i) - You are not invited\r\n";
+			this->sendMessageToClient(msg, creator);
+			return ;
+		}
+		// check if the channel is full (limit)
+		if (channel.getUsers().size() >= channel.getLimit()) {
+			msg = "471 " + creator.getNickname() + " " + channelName + " :Cannot join channel (+l) - Channel is full\r\n";
+			this->sendMessageToClient(msg, creator);
+			return ;
+		}
 		// check if the client is already in the channel
 		if (this->nameToChannel[channelName].isUserInChannel(creator)) {
 			// msg = "443 " + creator.getNickname() + " " + channelName + " :is already on channel\r\n"; 
@@ -473,16 +492,16 @@ void Server::JoinResponse(Client &client, std::string channelName) {
 
 void Server::handleJoinCommand(Client &client) {
 	// JOIN #channel1,#channel2,#channel3 key1,key2,key3
-	std::string data = this->fdToClient[client.getSocketfd()].getParameters()[0];
-	std::string data1 = this->fdToClient[client.getSocketfd()].getParameters()[1];
+	std::string data = client.getParameters().size() >= 1 ? this->fdToClient[client.getSocketfd()].getParameters()[0] : "";
+	std::string data1 = client.getParameters().size() >= 2 ? this->fdToClient[client.getSocketfd()].getParameters()[1] : "";
 	std::vector<std::string> channels = split(data, ",");
 	std::vector<std::string> keys = split(data1, ",");
 	for (int i = 0; i < channels.size(); i++) {
 		if (i < keys.size()) {
-			this->logic(channels[i], keys[i], client);
+			this->join_channel(channels[i], keys[i], client);
 		}
 		else {
-			this->logic(channels[i], "", client);
+			this->join_channel(channels[i], "", client);
 		}
 	}
 }
@@ -500,7 +519,6 @@ void Server::sendPrivateMessageToClient(Client &client, std::string recipientNic
 
 	if (this->getClientByNickname(recipientNickname).getSocketfd() != -1) {
 		std::string msg;
-		// msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + recipientNickname + " :" + message + "\n";
 		msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + this->serverHostName + " PRIVMSG " + recipientNickname + " :" + message + "\r\n";
 		this->sendMessageToClient(msg, this->getClientByNickname(recipientNickname));
 	}
@@ -573,7 +591,7 @@ bool Server::processClientData(Client &client, std::string data) {
 	this->fdToClient[client.getSocketfd()].parseIrcMessage(data);
 	std::string command = this->fdToClient[client.getSocketfd()].getCommand();
 	// print parameters
-	std::cout << "Activit detected: Client number " << client.getSocketfd() << "------------------------------------------"  << std::endl;
+	std::cout << "Activity detected: Client number " << client.getSocketfd() << "------------------------------------------"  << std::endl;
 	std::cout << "command: [" << command <<"]"<< std::endl;
 	std::cout << "parameters: ";
 	for (int i = 0; i < this->fdToClient[client.getSocketfd()].getParameters().size(); i++) {
@@ -581,7 +599,10 @@ bool Server::processClientData(Client &client, std::string data) {
 	}
 	std::cout << std::endl;
 	// check not enough parameters
-	if (command != "" && this->fdToClient[client.getSocketfd()].getParameters().size() == 0) {
+	if (command != "" && this->fdToClient[client.getSocketfd()].getParameters().size() == 0
+		&& command != "PART" && command != "part" &&  command != "!quiz" && command != "!QUIZ"
+		&& command != "!date" && command != "!DATE")
+	{
 		std::string response = "461 " + client.getNickname() + " " + command + " :Not enough parameters\r\n";
 		sendMessageToClient(response, client);
 		return false;
@@ -615,7 +636,6 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 5. PRIVMSG
 	if (command == "PRIVMSG" || command == "privmsg")
 		this->handlePrivateMessageCommand(client);
-	
 	// 6. KICK
 	if (command == "KICK" || command == "kick")
 		this->handleKickCommand(client);
@@ -633,20 +653,14 @@ bool Server::processClientData(Client &client, std::string data) {
 		this->handlePartCommand(client);
 	if (command == "NOTICE" || command == "notice")
 		this->handleNoticeCommand(client);
-	if (command == "!quiz" || command == "!QUIZ" || command == "!date") {
-		std::cout << "bbbbbbbbbbbbbbbbbbbbbUse: " << command << std::endl;
+	if (command == "!quiz" || command == "!QUIZ" || command == "!date" || command == "!DATE")
 		this->launchBot(client);
-	}
-	// 6. QUIT
-	// 5. PRINT
-	if (command == "PRINT" || command == "print")
-		this->printAllClients(data);
-	std::cout << "client info: " << std::endl;
-	std::cout << "nickname: [" << client.getNickname() << "]" << std::endl;
-	std::cout << "username: [" << client.getUsername() << "]" << std::endl;
-	std::cout << "realname: [" << client.getRealname() << "]" << std::endl;
-	std::cout << "isAuthenticated: [" << (client.getIsAuthenticated() ? "YES" : "NO") << "]" << std::endl;
-	std::cout << "isOperator: [" << (client.getIsOperator() ? "YES" : "NO") << "]" << std::endl;
+	// std::cout << "client info: " << std::endl;
+	// std::cout << "nickname: [" << client.getNickname() << "]" << std::endl;
+	// std::cout << "username: [" << client.getUsername() << "]" << std::endl;
+	// std::cout << "realname: [" << client.getRealname() << "]" << std::endl;
+	// std::cout << "isAuthenticated: [" << (client.getIsAuthenticated() ? "YES" : "NO") << "]" << std::endl;
+	// std::cout << "isOperator: [" << (client.getIsOperator() ? "YES" : "NO") << "]" << std::endl;
 	if (!client.getIsUserRegistered() && client.getIsAuthenticated() && client.getNickname() != "" && client.getUsername() != "")
 		this->sendConfimationMessage(client);
 	return true;
@@ -729,7 +743,6 @@ void Server::handleEvents() {
 				if (!this->acceptNewMessage(this->pollfds[i].fd)) {
 					continue;
 				}
-				// affect the changes also to the vector of clients // TODO: make a function to do this
 				for (int j = 0; j < this->clients.size(); j++) {
 					if (this->clients[j].getSocketfd() == this->pollfds[i].fd) {
 						this->clients[j] = this->fdToClient[this->pollfds[i].fd];
