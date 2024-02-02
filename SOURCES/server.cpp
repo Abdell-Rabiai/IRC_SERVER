@@ -11,7 +11,7 @@ Server::Server() : MAX_CLIENTS(SOMAXCONN) {
 }
 
 bool Server::isOperatorInChannel(Client client, Channel channel) {
-	for (int i = 0; i < channel.getOperators().size(); i++) {
+	for (size_t i = 0; i < channel.getOperators().size(); i++) {
 		if (channel.getOperators()[i].getNickname() == client.getNickname())
 			return true;
 	}
@@ -162,13 +162,13 @@ void Server::addClient(Client client, int socketfd) {
 }
 
 void Server::removeClient(Client client) {
-	for (int i = 0; i < this->clients.size(); i++) {
+	for (size_t i = 0; i < this->clients.size(); i++) {
 		if (this->clients[i].getSocketfd() == client.getSocketfd()) {
 			this->clients.erase(this->clients.begin() + i);
 			break;
 		}
 	}
-	for (int i = 0; i < this->clientSocketsfds.size(); i++) {
+	for (size_t i = 0; i < this->clientSocketsfds.size(); i++) {
 		if (this->clientSocketsfds[i] == client.getSocketfd()) {
 			this->clientSocketsfds.erase(this->clientSocketsfds.begin() + i);
 			break;
@@ -228,7 +228,7 @@ void Server::stopServer() {
 	// close the server socket
 	close(this->serverSocket.getFd());
 	// close all client sockets
-	for (int i = 0; i < this->clientSocketsfds.size(); i++) {
+	for (size_t i = 0; i < this->clientSocketsfds.size(); i++) {
 		close(this->clientSocketsfds[i]);
 	}
 }
@@ -266,7 +266,7 @@ void Server::removeDisconnectedClient(int &socketfd) {
 	// Remove the disconnected client from pollfds
 	std::cout << "Client disconnected " << std::endl;
 	close(socketfd);
-	for (int i = 0; i < this->pollfds.size(); i++) {
+	for (size_t i = 0; i < this->pollfds.size(); i++) {
 		if (this->pollfds[i].fd == socketfd) {
 			this->pollfds.erase(this->pollfds.begin() + i);
 			break ;
@@ -285,7 +285,7 @@ void Server::broadcastMessageOnServer(std::string &buffer, int senderSocketfd) {
 						+ std::string(buffer, 0, buffer.length()) + "\r\n";
 	std::string thankYouMsg = "Sent\r\n";
 	send(senderSocketfd, thankYouMsg.c_str(), thankYouMsg.size() + 1, 0);
-	for (int i = 1; i < this->pollfds.size(); i++) {
+	for (size_t i = 1; i < this->pollfds.size(); i++) {
 		if (this->pollfds[i].fd != senderSocketfd && this->pollfds[i].fd >= 0) {
 			sendMessageToClient(msg, this->fdToClient[this->pollfds[i].fd]);
 		}
@@ -294,7 +294,7 @@ void Server::broadcastMessageOnServer(std::string &buffer, int senderSocketfd) {
 
 void Server::broadcastMessageOnChannel(Channel channel, std::string message) {
 	if (this->isChannelExist(channel.getName())) {
-		for (int i = 0; i < channel.getUsers().size(); i++) {
+		for (size_t i = 0; i < channel.getUsers().size(); i++) {
 			if (channel.getUsers()[i].getSocketfd() >= 0) {
 				sendMessageToClient(message, channel.getUsers()[i]);
 			}
@@ -305,7 +305,7 @@ void Server::broadcastMessageOnChannel(Channel channel, std::string message) {
 void Server::broadcastMessageOnChannel(Channel channel, std::string message, Client sender) {
 	// except the sender
 	if (this->isChannelExist(channel.getName())) {
-		for (int i = 0; i < channel.getUsers().size(); i++) {
+		for (size_t i = 0; i < channel.getUsers().size(); i++) {
 			if (channel.getUsers()[i].getSocketfd() >= 0) {
 				if (channel.getUsers()[i].getSocketfd() != sender.getSocketfd())
 					sendMessageToClient(message, channel.getUsers()[i]);
@@ -423,7 +423,8 @@ void Server::join_channel(std::string channelName, std::string key, Client &crea
 			return ;
 		}
 		// check if the channel is full (limit)
-		if (channel.getUsers().size() >= channel.getLimit()) {
+		size_t size = channel.getUsers().size();
+		if (size >= channel.getLimit()) {
 			msg = "471 " + creator.getNickname() + " " + channelName + " :Cannot join channel (+l) - Channel is full\r\n";
 			this->sendMessageToClient(msg, creator);
 			return ;
@@ -483,7 +484,7 @@ void Server::JoinResponse(Client &client, std::string channelName) {
 	std::string ListMessage;
 	std::vector<Client> users = this->nameToChannel[channelName].getUsers();
 	std::string joinedUsers = "";
-	for (int i = 0; i < users.size(); i++) {
+	for (size_t i = 0; i < users.size(); i++) {
 		joinedUsers += users[i].getNickname() + " ";
 	}
 	ListMessage = "353 " + client.getNickname() + " = " + channelName + " :" + joinedUsers + "\r\n";
@@ -499,7 +500,7 @@ void Server::handleJoinCommand(Client &client) {
 	std::string data1 = client.getParameters().size() >= 2 ? this->fdToClient[client.getSocketfd()].getParameters()[1] : "";
 	std::vector<std::string> channels = split(data, ",");
 	std::vector<std::string> keys = split(data1, ",");
-	for (int i = 0; i < channels.size(); i++) {
+	for (size_t i = 0; i < channels.size(); i++) {
 		if (i < keys.size()) {
 			this->join_channel(channels[i], keys[i], client);
 		}
@@ -510,7 +511,7 @@ void Server::handleJoinCommand(Client &client) {
 }
 
 Client Server::getClientByNickname(std::string nickname) {
-	for (int i = 0; i < this->clients.size(); i++) {
+	for (size_t i = 0; i < this->clients.size(); i++) {
 		if (this->clients[i].getNickname() == nickname) {
 			return this->clients[i];
 		}
@@ -552,7 +553,7 @@ void Server::handlePrivateMessageCommand(Client &client) {
 	std::string receivers = this->fdToClient[client.getSocketfd()].getParameters()[0];
 	std::string message = this->fdToClient[client.getSocketfd()].getParameters()[1];
 	std::vector<std::string> recipients = split(receivers, ",");
-	for (int i = 0; i < recipients.size(); i++) {
+	for (size_t i = 0; i < recipients.size(); i++) {
 		if (recipients[i][0] != '#') {
 			this->sendPrivateMessageToClient(client, recipients[i], message);
 		}
@@ -569,7 +570,7 @@ void Server::printAllClients(std::string data) {
 	if (token != "PRINT")
 		return;
 	std::cout << "All clients: " << std::endl;
-	for (int i = 0; i < this->clients.size(); i++) {
+	for (size_t i = 0; i < this->clients.size(); i++) {
 		std::cout << "Client number " << i << "------------------------------------------"  << std::endl;
 		this->clients[i].printClientInfo();
 	}
@@ -597,7 +598,7 @@ bool Server::processClientData(Client &client, std::string data) {
 	std::cout << "Activity detected: Client number " << client.getSocketfd() << "------------------------------------------"  << std::endl;
 	std::cout << "command: [" << command <<"]"<< std::endl;
 	std::cout << "parameters: ";
-	for (int i = 0; i < this->fdToClient[client.getSocketfd()].getParameters().size(); i++) {
+	for (size_t i = 0; i < this->fdToClient[client.getSocketfd()].getParameters().size(); i++) {
 		std::cout << "[" << this->fdToClient[client.getSocketfd()].getParameters()[i] << "] ";
 	}
 	std::cout << std::endl;
@@ -618,7 +619,7 @@ bool Server::processClientData(Client &client, std::string data) {
 			}
 		}
 		else {
-			std::string response = "462 You may not reregister\r\n";
+			std::string response = "462 Already registred, You may not reregister\r\n";
 			sendMessageToClient(response, client);
 		}
 	}
@@ -679,7 +680,7 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 	size_t pos2 = buffer.find("\n");
 	if (pos != std::string::npos) {
 		std::vector<std::string> cmds = split(buffer, "\r\n");
-		for (int i = 0; i < cmds.size() - 1; i++) {
+		for (size_t i = 0; i < cmds.size() - 1; i++) {
 			std::cout << "(" << cmds[i] << ")" << std::endl;
 			if (!this->processClientData(client, cmds[i])) {
 				this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
@@ -690,7 +691,7 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 	}
 	else if (pos2 != std::string::npos) {
 		std::vector<std::string> cmds = split(buffer, "\n");
-		for (int i = 0; i < cmds.size() - 1; i++) {
+		for (size_t i = 0; i < cmds.size() - 1; i++) {
 			std::cout << "(" << cmds[i] << ")" << std::endl;
 			if (!this->processClientData(client, cmds[i])) {
 				this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
@@ -743,12 +744,12 @@ void Server::handleEvents() {
 			this->pollfds.push_back(clientPollfd);
 		}
 		// check if any of the client sockets is ready to receive data
-		for (int i = 1; i < this->pollfds.size(); i++) {
+		for (size_t i = 1; i < this->pollfds.size(); i++) {
 			if (this->pollfds[i].revents & POLLIN) {
 				if (!this->acceptNewMessage(this->pollfds[i].fd)) {
 					continue;
 				}
-				for (int j = 0; j < this->clients.size(); j++) {
+				for (size_t j = 0; j < this->clients.size(); j++) {
 					if (this->clients[j].getSocketfd() == this->pollfds[i].fd) {
 						this->clients[j] = this->fdToClient[this->pollfds[i].fd];
 						break;

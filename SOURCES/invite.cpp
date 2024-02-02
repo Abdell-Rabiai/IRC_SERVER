@@ -23,7 +23,7 @@ void Server::inviteToChannel(Client &inviter, Channel &channel, Client &invitedC
             this->sendMessageToClient(msg, inviter);
             return;
         }
-        if (channel.getIsLimited() && channel.getUsers().size() >= (size_t)channel.getLimit() && !this->isOperatorInChannel(inviter, channel)) {
+        if (channel.getIsLimited() && channel.getUsers().size() >= channel.getLimit() && !this->isOperatorInChannel(inviter, channel)) {
             msg = "405 " + inviter.getNickname() + " " + channel.getName() + " :You have joined too many channels" + "\r\n";
             this->sendMessageToClient(msg, inviter);
             return;

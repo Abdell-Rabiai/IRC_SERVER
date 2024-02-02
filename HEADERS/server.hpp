@@ -129,7 +129,7 @@ class Server
         bool isOperatorInChannel(Client client, Channel channel);
         void do_modes(Client &client, Channel &channel, std::vector<std::string> modes);
         void launchBot(Client &client);
-        int check_param(int i, std::vector<std::string> modes, Client &client);
+        int check_param(size_t i, std::vector<std::string> modes, Client &client);
 
 };
 

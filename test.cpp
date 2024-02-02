@@ -102,3 +102,15 @@ join #canal
 Set/remove the restrictions of the TOPIC command to channel
 operators
 · k: Set/remove the channel key (password)
+
+
+
+
+
+
+
+is already on channel : WHEN DISCONECTION
+AFFICHIER MESSAGE DIAL PART
+nick already in use
+don't do anything hta tregistra
+password empty ?!!

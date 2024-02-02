@@ -57,7 +57,7 @@ class Client
         void removeChannelKey(Channel channel);  // MODE
         void giveOperatorPrivileges(Channel channel, Client client); // MODE
         void removeOperatorPrivileges(Channel channel, Client client); // MODE
-        void setChannelLimit(Channel channel, int limit); // MODE
+        void setChannelLimit(Channel channel, size_t limit); // MODE
         void removeChannelLimit(Channel channel); // MODE
 
 		// getters

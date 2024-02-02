@@ -9,7 +9,7 @@ class Channel
         std::string topic;
         bool isInviteOnly;
         bool isRestrictedTopic;
-        int limit;
+        size_t limit;
         std::string key;
         bool isProtected;
         bool isLimited;
@@ -54,7 +54,7 @@ class Channel
 
         bool getIsInviteOnly();
         bool getIsRestrictedTopic();
-        int getLimit();
+        size_t getLimit();
         std::string getKey();
         bool getIsProtected();
         bool getIsLimited();
@@ -76,7 +76,7 @@ class Channel
         void setTopic(std::string topic);
         void setIsInviteOnly(bool isInviteOnly);
         void setIsRestrictedTopic(bool isRestrictedTopic);
-        void setLimit(int limit);
+        void setLimit(size_t limit);
         void setKey(std::string key);
         void setIsProtected(bool isProtected);
         void setIsLimited(bool isLimited);

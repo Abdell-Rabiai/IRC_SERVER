@@ -23,7 +23,7 @@ SRCS = $(SOURCES)
 MAIN_SRC = main.cpp
 
 FLAGS =  -g3 -fsanitize=address #-Wall -Werror -Wextra 
-CC = c++ -std=c++11
+CC = c++ -std=c++98
 
 HEADER = HEADERS/$(wildcard *.hpp)
 
@@ -63,5 +63,5 @@ re : fclean all
 
 #echo -e "PASS 1337\nNICK tabi3a\nUSER arabiai * 0    :abdelouahed rabiai\n"
 # PASS 1337
-# NICK tabi3
+# NICK tabi3a
 # USER arabiai * 0    :abdelouahed rabiai

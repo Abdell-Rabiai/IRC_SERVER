@@ -9,7 +9,7 @@ Channel::Channel(std::string name)
     this->topic = "";
     this->isInviteOnly = false;
     this->isRestrictedTopic = false;
-    this->limit = -1;
+    this->limit = UINT32_MAX;
     this->key = "";
     this->isProtected = false;
     this->isLimited = false;
@@ -31,7 +31,7 @@ Channel::Channel(std::string name, std::string password)
     this->topic = "";
     this->isInviteOnly = false;
     this->isRestrictedTopic = false;
-    this->limit = -1;
+    this->limit = UINT32_MAX;
     this->key = password;
     this->isProtected = false;
     this->isLimited = false;
@@ -53,7 +53,7 @@ Channel::Channel(std::string name, std::string password, std::string topic)
     this->topic = topic;
     this->isInviteOnly = false;
     this->isRestrictedTopic = false;
-    this->limit = -1;
+    this->limit = UINT32_MAX;
     this->key = password;
     this->isProtected = false;
     this->isLimited = false;
@@ -75,7 +75,7 @@ Channel::Channel()
     this->topic = "";
     this->isInviteOnly = false;
     this->isRestrictedTopic = false;
-    this->limit = -1;
+    this->limit = UINT32_MAX;
     this->key = "";
     this->isProtected = false;
     this->isLimited = false;
@@ -167,7 +167,7 @@ void Channel::removeKey()
 
 void Channel::removeLimit()
 {
-    this->limit = -1;
+    this->limit = UINT32_MAX;
 }
 
 std::string Channel::getName()
@@ -190,7 +190,7 @@ bool Channel::getIsRestrictedTopic()
     return this->isRestrictedTopic;
 }
 
-int Channel::getLimit()
+size_t Channel::getLimit()
 {
     return this->limit;
 }
@@ -287,7 +287,7 @@ void Channel::setIsRestrictedTopic(bool isRestrictedTopic)
     this->isRestrictedTopic = isRestrictedTopic;
 }
 
-void Channel::setLimit(int limit)
+void Channel::setLimit(size_t limit)
 {
     this->limit = limit;
 }
