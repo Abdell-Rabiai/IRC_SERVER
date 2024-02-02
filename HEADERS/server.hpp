@@ -58,6 +58,7 @@ class Server
         bool acceptNewMessage(int socketfd); // accepts a new message and processes it
         bool processClientData(Client &client, std::string data);
         void broadcastMessageOnChannel(Channel channel, std::string message);
+        void broadcastMessageOnChannel(Channel channel, std::string message, Client sender);
         void broadcastMessageOnServer(std::string &message, int senderSocketfd);
         void removeClient(Client client);
         void removeDisconnectedClient(int &socketfd);
