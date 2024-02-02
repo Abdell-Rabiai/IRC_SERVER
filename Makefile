@@ -23,9 +23,9 @@ SRCS = $(SOURCES)
 MAIN_SRC = main.cpp
 
 FLAGS =  -g3 -fsanitize=address #-Wall -Werror -Wextra 
+CC = c++ -std=c++11
 
 HEADER = HEADERS/$(wildcard *.hpp)
-CC = c++ -std=c++11
 
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRCS:.cpp=.o)) 
 
@@ -62,6 +62,6 @@ re : fclean all
 .PHONY : all clean fclean re
 
 #echo -e "PASS 1337\nNICK tabi3a\nUSER arabiai * 0    :abdelouahed rabiai\n"
-# PASS 1337
-# NICK tabi3a
-# USER arabiai * 0    :abdelouahed rabiai
+PASS 1337
+NICK tabi3
+USER arabiai * 0    :abdelouahed rabiai

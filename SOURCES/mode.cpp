@@ -33,7 +33,7 @@ int Server::check_param(int i, std::vector<std::string> modes, Client &client) {
 
 void Server::do_modes(Client &client, Channel &channel, std::vector<std::string> modes) {
   std::string msg = "";
-  for (size_t i = 0; i < modes.size(); i++) {
+  for (int i = 0; i < modes.size(); i++) {
 
     if (!this->isOperatorInChannel(client, channel) || !channel.isUserInChannel(client)) {
       msg = "482 " + client.getNickname() + " " + channel.getName() + " :You're not channel operator" + "\r\n";

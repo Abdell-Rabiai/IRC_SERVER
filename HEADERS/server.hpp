@@ -12,7 +12,7 @@ class Server
 {
     private:
         Socket serverSocket;
-        const int MAX_CLIENTS = SOMAXCONN;
+        const int MAX_CLIENTS;
         int serverSocketfd;
         int serverPort;
         std::string password;

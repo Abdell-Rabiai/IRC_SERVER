@@ -1,10 +1,13 @@
 # include "../HEADERS/all_headers.hpp"
 # include "../HEADERS/server.hpp"
 
-Server::Server() {
+Server::Server() : MAX_CLIENTS(SOMAXCONN) {
+	this->serverName = ":IRC_SERVER";
+	this->serverCreationTime = Server::getCurrentTime();
+	this->serverSocketfd = serverSocket.getFd();
+	this->serverHostName = getServerIp();
 	this->serverPort = 6667;
 	this->password = "pass";
-	this->serverSocketfd = serverSocket.getFd();
 }
 
 bool Server::isOperatorInChannel(Client client, Channel channel) {
@@ -31,14 +34,14 @@ std::string Server::getCurrentTime() {
 std::string Server::getServerIp()
 {
 	char IP[256];
-   if (gethostname(IP, sizeof(IP)) != 0) {
+	if (gethostname(IP, sizeof(IP)) != 0) {
 	   std::cerr << "Error in gethostname" << std::endl;
 	   exit(EXIT_FAILURE);
-   }
-   return std::string(IP);
+	}
+	return std::string(IP);
 }
 
-Server::Server(int port, std::string password) {
+Server::Server(int port, std::string password) : MAX_CLIENTS(SOMAXCONN) {
 	this->serverPort = port;
 	this->password = password;
 	this->serverName = ":IRC_SERVER";
@@ -47,7 +50,7 @@ Server::Server(int port, std::string password) {
 	this->serverHostName = getServerIp();
 }
 
-Server::Server(int port, std::string password, Socket serverSocket) {
+Server::Server(int port, std::string password, Socket serverSocket) : MAX_CLIENTS(SOMAXCONN) {
 	this->serverPort = port;
 	this->password = password;
 	this->serverSocket = serverSocket;
@@ -347,14 +350,14 @@ void Server::handleUserCommand(Client &client) {
 
 void parseData(std::string &password, std::string &nickname, std::string &username, std::string &realname, std::string data) {
 	std::istringstream str(data);
-    // Assuming the data format is {PASS password\nNICK nickname\nUSER username 0 * :ABDELOUAHED RABIAI\n}
-    std::string token;
-    while (str >> token) {
-        if (token == "PASS") {
-            str >> password;
-        } else if (token == "NICK") {
-            str >> nickname;
-        } else if (token == "USER") {
+	// Assuming the data format is {PASS password\nNICK nickname\nUSER username 0 * :ABDELOUAHED RABIAI\n}
+	std::string token;
+	while (str >> token) {
+		if (token == "PASS") {
+			str >> password;
+		} else if (token == "NICK") {
+			str >> nickname;
+		} else if (token == "USER") {
 			str >> username;
 			str >> token;
 			str >> token;
@@ -366,8 +369,8 @@ void parseData(std::string &password, std::string &nickname, std::string &userna
 				realname = buf.substr(1, buf.length() - 2);
 			else
 				realname = "unknown";
-        }
-    }
+		}
+	}
 }
 
 // toify users ==> std::string notifyusers = ":" + this->_joinedUsers.find(fd)->second.getNICKNAME() + "!" + this->_joinedUsers.find(fd)->second.getUSERNAME() + "@" +  this->_HostName + " JOIN " + this->getChannelName() + "\r\n";
@@ -724,7 +727,8 @@ bool Server::acceptNewMessage(int socketfd) {
 
 void Server::handleEvents() {
 	// create a poll set and add the server socket to it
-	this->pollfds.push_back({this->serverSocket.getFd(), POLLIN, 0});
+	struct pollfd serverPollfd = {this->serverSocket.getFd(), POLLIN, 0};
+	this->pollfds.push_back(serverPollfd);
 	while(true) {
 		// poll for events hangs indefinitely till an event occurs on any of the sockets in the poll set
 		int beReady = poll(this->pollfds.data(), this->pollfds.size(), -1);
@@ -735,7 +739,8 @@ void Server::handleEvents() {
 		// check if the server socket is ready to accept a new connection
 		if (this->pollfds[0].revents & POLLIN) {
 			int clientSocketfd = this->acceptNewConnection();
-			this->pollfds.push_back({clientSocketfd, POLLIN, 0});
+			struct pollfd clientPollfd = {clientSocketfd, POLLIN, 0};
+			this->pollfds.push_back(clientPollfd);
 		}
 		// check if any of the client sockets is ready to receive data
 		for (int i = 1; i < this->pollfds.size(); i++) {
