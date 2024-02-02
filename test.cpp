@@ -68,26 +68,24 @@ void parseIrcMessage(std::string ircMessage) {
     std::cout << "Trailing: " << trailing << std::endl;
 }
 int main() {
-    std::string buffer = "PASS password\r\nNICK nickname\r\nUSER username * 0    :realname\r\n";
-    // std::string msg = "USER username * 0    :realname\n";
-    std::vector<std::string> cmds = splitt(buffer, "\r\n");
-    for (int i = 0; i < cmds.size(); i++) {
-        parseIrcMessage(cmds[i]);
-    }
-    // std::cout << std::endl;
-    // std::cout << std::endl;
-    // parseIrcMessage(msg);
+system("python3 SOURCES/bot.py 1337");
+    // std::string ircMessage = "PASS 1337\nNICK tabi3a\nUSER arabiai * 0 :abdelouahed rabiai\n";
+    // parseIrcMessage(ircMessage);
+    // ircMessage = "PASS 1337\nNICK black\nUSER ahmaymou * 0 :abderhman hmaymou\n";
+    // parseIrcMessage(ircMessage);
+    // ircMessage = "PASS 1337\nNICK moha\nUSER momihamm * 0 :mohammed momimann\n";
+    // parseIrcMessage(ircMessage);
     return 0;
 }
 
-PASS 1337
-NICK tabi3a
-USER arabiai * 0 :abdelouahed rabiai
+// PASS 1337
+// NICK tabi3a
+// USER arabiai * 0 :abdelouahed rabiai
 
-PASS 1337
-NICK black
-USER ahmaymou * 0 :abderhman hmaymou
+// PASS 1337
+// NICK black
+// USER ahmaymou * 0 :abderhman hmaymou
 
-PASS 1337
-NICK moha
-USER momihamm * 0 :mohammed momimann
+// PASS 1337
+// NICK moha
+// USER momihamm * 0 :mohammed momimann

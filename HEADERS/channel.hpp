@@ -20,7 +20,9 @@ class Channel
         std::vector<int> ejectedfds;
         std::vector<Client> operators;
         std::map<int, Client> fdToOperator; // key: socketfd, value Client
+
         std::string creatorNickname; // the nickname of the client who created the channel
+        std::vector<std::string> OperatorNicknames;
         std::string creationTime;
         std::string topicTime;
         std::string topicSetterNickname; // the nickname of the client who set the topic

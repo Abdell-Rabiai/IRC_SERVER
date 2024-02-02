@@ -112,6 +112,23 @@ class Server
         void setFdToClient(std::map<int, Client> fdToClient);
         void setNameToChannel(std::map<std::string, Channel> nameToChannel);
 
+
+        //
+
+        // void viewTopic(Client &client, std::string channelName);
+        void viewTopic(Client &client, std::string channelName, Channel &channel);
+        void handleTopicCommand(Client &client);
+        void handleInviteCommand(Client &client);
+        void inviteToChannel(Client &inviter, Channel &channel, Client &invitedClient);
+        void handleKickCommand(Client &client);
+        void handleModeCommand(Client &client);
+        void handleNoticeCommand(Client &client);
+        void handlePartCommand(Client &client);
+        Channel &getChannelRefByName(std::string channelName);
+        bool isOperatorInChannel(Client client, Channel channel);
+        void do_modes(Client &client, Channel &channel, std::vector<std::string> modes);
+        void launchBot(Client &client);
+
 };
 
 std::string printHostInfos(const struct sockaddr_in &address);

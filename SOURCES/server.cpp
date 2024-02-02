@@ -7,6 +7,14 @@ Server::Server() {
 	this->serverSocketfd = serverSocket.getFd();
 }
 
+bool Server::isOperatorInChannel(Client client, Channel channel) {
+	for (int i = 0; i < channel.getOperators().size(); i++) {
+		if (channel.getOperators()[i].getNickname() == client.getNickname())
+			return true;
+	}
+	return false;
+}
+
 std::string Server::getCurrentTime() {
 	time_t now = time(0);
 	tm *ltm = localtime(&now);
@@ -78,6 +86,12 @@ Channel Server::getChannelByName(std::string channelName) {
 	if (this->isChannelExist(channelName))
 		return this->nameToChannel[channelName];
 	return Channel();
+}
+
+Channel &Server::getChannelRefByName(std::string channelName) {
+	if (this->isChannelExist(channelName))
+		return this->nameToChannel[channelName];
+	return this->nameToChannel[""];
 }
 
 bool Server::isClientInChannel(Client &client, std::string channelName) {
@@ -258,6 +272,7 @@ void Server::createChannel(std::string name, std::string password, Client &creat
 
 void Server::logic(std::string channelName, std::string key, Client &creator) {
 	// if the channel doesn't exist create it
+	std::string msg = "";
 	if (this->nameToChannel.find(channelName) == this->nameToChannel.end()) {
 		if (!key.empty())
 			this->createChannel(channelName, key, creator);
@@ -268,20 +283,18 @@ void Server::logic(std::string channelName, std::string key, Client &creator) {
 	else {
 		// check if the client is already in the channel
 		if (this->nameToChannel[channelName].isUserInChannel(creator)) {
-			std::string msg = "443 ERR_USERONCHANNEL " + creator.getNickname() + " " + channelName + " :is already on channel\n"; 
+			msg = "443 " + creator.getNickname() + " " + channelName + " :is already on channel\n"; 
 			this->sendMessageToClient(msg, creator);
 			return;
 		}
 		// check if the channel has a password
 		if (this->nameToChannel[channelName].getKey() == key || this->nameToChannel[channelName].getKey() == "") {
 			this->nameToChannel[channelName].addUser(creator);
-			std::string msg = "You have joined the channel " + channelName + " as a Regular User\n";
+			msg = "341 " + creator.getNickname() + " " + channelName + " :You joined this channel" + channelName + "\n";
 			this->sendMessageToClient(msg, creator);
 		}
 		else {
-			std::string msg = "Please enter the correct password to join the channel " + channelName + "\n";
-			//ERR_BADCHANNELKEY (475)
-			msg = "475 ERR_BADCHANNELKEY " + channelName + " Cannot join channel (+k) - bad key\n";
+			msg = "475 " + creator.getNickname() + " " + channelName + " :Cannot join channel (+k)\n";
 			this->sendMessageToClient(msg, creator);
 		}
 	}
@@ -308,7 +321,8 @@ void Server::JoinResponse(Client &client, std::string channelName) {
 	// A JOIN message with the client as the message <source> and the channel they have joined as the first parameter of the message.
 	// :<source> JOIN <channel> and <source> ==> <nickname>!<username>@<hostname>
 	std::string broadcastMessage = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " JOIN " + channelName + "\n";
-	this->sendMessageToClient(broadcastMessage, client);
+	// this->sendMessageToClient(broadcastMessage, client);
+	this->broadcastMessageOnChannel(this->nameToChannel[channelName], broadcastMessage);
 
 	// 2. Channel topic if available
 	if (this->isChannelhasTopic(channelName)) {
@@ -474,11 +488,26 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 5. PRIVMSG
 	if (command == "PRIVMSG" || command == "privmsg")
 		this->handlePrivateMessageCommand(client);
+	
 	// 6. KICK
+	if (command == "KICK" || command == "kick")
+		this->handleKickCommand(client);
 	// 7. INVITE
-	// 9. TOPIC
+	if (command == "INVITE" || command == "invite")
+		this->handleInviteCommand(client);
+	// 8. TOPIC
+	if (command == "TOPIC" || command == "topic")
+		this->handleTopicCommand(client);
 	// 8. MODE
+	if (command == "MODE" || command == "mode")
+		this->handleModeCommand(client);
 	// 7. PART
+	if (command == "PART" || command == "part")
+		this->handlePartCommand(client);
+	if (command == "NOTICE" || command == "notice")
+		this->handleNoticeCommand(client);
+	if (command == "!quiz" || command == "!QUIZ" || command == "!date")
+		this->launchBot(client);
 	// 6. QUIT
 	// 5. PRINT
 	if (command == "PRINT" || command == "print")
@@ -497,6 +526,7 @@ bool Server::processClientData(Client &client, std::string data) {
 bool Server::handleRecievedData(Client &client, std::string data) {
 	// Append racieved data to the buffer of the client
 	this->fdToBuffer[client.getSocketfd()] += data;
+	client.setBuffer(this->fdToBuffer[client.getSocketfd()]);
 	// check if the buffer contains a complete message
 	std::string buffer = this->fdToBuffer[client.getSocketfd()];
 	size_t pos = buffer.find("\r\n");

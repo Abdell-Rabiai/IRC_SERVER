@@ -149,7 +149,26 @@ void Channel::removeOperator(Client client)
     }
 }
 
+void Channel::removeInviteOnly()
+{
+    this->isInviteOnly = false;
+}
 // getters  
+
+void Channel::removeRestrictedTopic()
+{
+    this->isRestrictedTopic = false;
+}
+
+void Channel::removeKey()
+{
+    this->key = "";
+}
+
+void Channel::removeLimit()
+{
+    this->limit = -1;
+}
 
 std::string Channel::getName()
 {
@@ -253,6 +272,11 @@ void Channel::setTopic(std::string topic)
     this->topicTime = Server::getCurrentTime();
 }
 
+void Channel::setInviteOnly()
+{
+    this->isInviteOnly = true;
+}
+
 void Channel::setIsInviteOnly(bool isInviteOnly)
 {
     this->isInviteOnly = isInviteOnly;
@@ -331,4 +355,9 @@ void Channel::setTopicTime(std::string topicTime)
 void Channel::setTopicSetterNickname(std::string topicSetterNickname)
 {
     this->topicSetterNickname = topicSetterNickname;
+}
+
+void Channel::setRestrictedTopic()
+{
+    this->isRestrictedTopic = true;
 }
