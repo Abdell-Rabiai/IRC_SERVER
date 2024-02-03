@@ -67,6 +67,8 @@ class Client
 		std::string getRealname();
 		bool getIsOperator();
 		bool getIsAuthenticated();
+		// bool isNicknameSet();
+		// bool isUsernameSet();
 		std::string getBuffer();
 		std::string getCommand();
 		std::vector<std::string> getParameters();

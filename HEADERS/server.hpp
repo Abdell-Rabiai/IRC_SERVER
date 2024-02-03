@@ -64,13 +64,15 @@ class Server
         void removeDisconnectedClient(int &socketfd);
         void addClient(Client client, int socketfd);
 
+        void removeChannel(std::string channelName);
 
         void sendMessageToClient(std::string message , Client client);
         void sendMessageToChannel(std::string message, Channel channel);
         void createChannel(std::string name, std::string password, Client &creator);
         
-        void handleNickCommand(Client &client);
-        void handleUserCommand(Client &client);
+        bool handleNickCommand(Client &client);
+        bool handleUserCommand(Client &client);
+        
         void handleJoinCommand(Client &client);
         void JoinResponse(Client &client, std::string channelName);
         bool isChannelExist(std::string channelName);

@@ -68,7 +68,8 @@ class Channel
         std::string getCreationTime();
         std::string getTopicTime();
         std::string getCreatorNickname();
-
+        // get reference for fdToUsers
+        std::map<int, Client> &getFdToUserRef();
 
 
         // setters

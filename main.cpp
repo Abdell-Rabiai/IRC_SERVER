@@ -5,6 +5,21 @@
 # include "HEADERS/socket.hpp"
 
 
+bool check_port(char *port)
+{
+    int i = 0;
+    if (strlen(port) > 5)
+        return false;
+    while (port[i])
+    {
+        if (!isdigit(port[i]))
+            return false;
+        i++;
+    }
+    return true;
+}
+
+
 int main(int argc, char **argv)
 {
     try {
@@ -14,8 +29,13 @@ int main(int argc, char **argv)
             std::cerr << "Usage: ./server <password> <port> " << std::endl;
             return 1;
         }
-        int port = atoi(argv[2]);
         std::string password = argv[1];
+        if (password.empty() || !check_port(argv[2]))
+        {
+            std::cerr << "Password Empty Or Port Not Valid" << std::endl;
+            return 1;
+        }
+        int port = atoi(argv[2]);
         std::cout << password << std::endl;
 
         Server server(port, password);

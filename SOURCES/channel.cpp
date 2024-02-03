@@ -260,6 +260,11 @@ std::string Channel::getTopicSetterNickname()
     return this->topicSetterNickname;
 }
 
+std::map<int, Client> &Channel::getFdToUserRef()
+{
+	return this->fdToUser;
+}
+
 // setters
 void Channel::setName(std::string name)
 {
