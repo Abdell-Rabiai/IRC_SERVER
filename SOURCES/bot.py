@@ -24,12 +24,13 @@ async def getweather(io, recipient):
     # fetch a weather forecast from a city
     weather = await client.get('Casablanca')
     
-    # returns the current day's forecast temperature (int)
-    io.sendall(f'privmsg {recipient} :Today\'s temperature in Casablanca is: {(weather.current.temperature - 32) * 5/9} °C\n'.encode('utf-8'))
+    temp = round((weather.current.temperature - 32) * 5/9, 2)
+    io.sendall(f'privmsg {recipient} :Today\'s temperature in Casablanca is: {temp} °C\n'.encode('utf-8'))
     
     # get the weather forecast for a few days
     for forecast in weather.forecasts:
-      io.sendall(f'privmsg {recipient} :{forecast.date}: {(forecast.temperature - 32) * 5/9 } °C\n'.encode('utf-8'))
+      temp = round((forecast.temperature - 32) * 5/9, 2)
+      io.sendall(f'privmsg {recipient} :{forecast.date}: {temp} °C\n'.encode('utf-8'))
 
 
 # log into the server

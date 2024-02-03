@@ -22,7 +22,7 @@ void Server::launchBot(Client &client) {
     msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + client.getNickname() + " :" + "!quit: quits the bot" + "\n";
     this->sendMessageToClient(msg, client);
     char *python3 = "python3";
-    char *args[] = {"python3", "/Users/ahmaymou/Desktop/IRC_SERVER/SOURCES/bot.py", "1234", NULL};
+    char *args[] = {"python3", "/Users/ahmaymou/Desktop/IRC_SERVER/SOURCES/bot.py", "1337", NULL};
     pid_t child = fork();
     if (child == 0) {
         execvp(python3, args);
@@ -30,5 +30,4 @@ void Server::launchBot(Client &client) {
     else {
         std::cout << "Bot launched\n" << std::endl;
     }
-    std::cout << "Bot launched\n" << std::endl; 
 }
