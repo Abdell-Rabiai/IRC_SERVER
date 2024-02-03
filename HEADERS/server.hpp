@@ -71,7 +71,7 @@ class Server
         void createChannel(std::string name, std::string password, Client &creator);
         
         bool handleNickCommand(Client &client);
-        bool handleUserCommand(Client &client);
+        void handleUserCommand(Client &client);
         
         void handleJoinCommand(Client &client);
         void JoinResponse(Client &client, std::string channelName);
@@ -136,6 +136,7 @@ class Server
 };
 
 std::string printHostInfos(const struct sockaddr_in &address);
+std::vector<std::string>  split(std::string str, std::string delimiter);
 
 
 # endif // _SERVER_HPP_
