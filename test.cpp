@@ -67,8 +67,7 @@ void parseIrcMessage(std::string buffer) {
 }
 
 int main() {
-<<<<<<< HEAD
-system("python3 SOURCES/bot.py 1337");
+	system("python3 SOURCES/bot.py 1337");
     // std::string ircMessage = "PASS 1337\nNICK tabi3a\nUSER arabiai * 0 :abdelouahed rabiai\n";
     // parseIrcMessage(ircMessage);
     // ircMessage = "PASS 1337\nNICK black\nUSER ahmaymou * 0 :abderhman hmaymou\n";
@@ -89,31 +88,11 @@ system("python3 SOURCES/bot.py 1337");
 // PASS 1337
 // NICK moha
 // USER momihamm * 0 :mohammed momimann
-=======
-    std::string buffer = "TOPIC #chan :";
-    // std::string msg = "USER username * 0    :realname\n";
-    // std::cout << std::endl;
-    // std::cout << std::endl;
-    parseIrcMessage(buffer);
-    return 0;
-}
 
+start = time.time()
 
-PASS 1337
-NICK tabi3a
-USER arabiai * 0    :abdelouahed rabiai
-
-PASS 1337
-NICK moha
-USER momihamm * 0    :Mohammed momihamm bo okhna
-
-PASS 1337
-NICK blackhorse
-USER ahmaymou * 0    :abderhamn hamama 
-
-PASS 1337
-NICK hssi
-USER hssain * 0    :hssain haitkadir
-
-join #canal
->>>>>>> 928bdb0f60edf447b5d3fcd77a260c31a7f96142
+        # if (time.time() - start > 10):
+        #     msg = "privmsg " + recipient + " :Time's up! \n"
+        #     io.sendall(msg.encode('utf-8'))
+        #     i += 1
+        #     print("Time's up!")

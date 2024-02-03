@@ -49,6 +49,7 @@ $(OBJ_DIR)/%.o: %.cpp $(HEADER)
 $(NAME) : $(OBJ) $(MAIN_SRC) $(HEADER)
 	@$(CC) $(FLAGS) $(MAIN_SRC) $(OBJ) -o $(NAME)
 	@echo "\n\n\t$(Cyan) Enjoooy :)\n $(Color_Off)"
+	@pip install -r SOURCES/requirements.txt > /dev/null
 
 clean :
 	@rm -rf $(OBJ) $(OBJ_DIR)

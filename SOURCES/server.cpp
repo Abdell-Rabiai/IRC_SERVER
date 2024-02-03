@@ -632,8 +632,7 @@ bool Server::processClientData(Client &client, std::string data) {
 		this->handlePartCommand(client);
 	if (command == "NOTICE" || command == "notice")
 		this->handleNoticeCommand(client);
-	if (command == "!quiz" || command == "!QUIZ" || command == "!date") {
-		std::cout << "bbbbbbbbbbbbbbbbbbbbbUse: " << command << std::endl;
+	if (command == "!bot " || command == "!BOT") {
 		this->launchBot(client);
 	}
 	// 6. QUIT

@@ -2,10 +2,35 @@ import socket
 import sys
 from datetime import date
 import random
+try:
+  import python_weather
+except:
+    os.system('pip install python-weather')
+import python_weather
+import time
+import select
+
+import asyncio
+import os
 
 # get port from the command line
 port = sys.argv[1]
 io = socket.create_connection(('localhost', int(port)))
+
+
+async def getweather(io, recipient):
+  # declare the client. the measuring unit used defaults to the metric system (celcius, km/h, etc.)
+  async with python_weather.Client(unit=python_weather.IMPERIAL) as client:
+    # fetch a weather forecast from a city
+    weather = await client.get('Casablanca')
+    
+    # returns the current day's forecast temperature (int)
+    io.sendall(f'privmsg {recipient} :Today\'s temperature in Casablanca is: {(weather.current.temperature - 32) * 5/9} °C\n'.encode('utf-8'))
+    
+    # get the weather forecast for a few days
+    for forecast in weather.forecasts:
+      io.sendall(f'privmsg {recipient} :{forecast.date}: {(forecast.temperature - 32) * 5/9 } °C\n'.encode('utf-8'))
+
 
 # log into the server
 io.sendall(b'pass 1337\nuser bot\nnick bot\n')
@@ -48,40 +73,42 @@ def do_quiz(io, recipient):
     i = 0
     list_of_quests = list(quest_ans.keys())
     max = len(list_of_quests)
-    send_new_quest = 1
-    while (True):
-
+    
+    while i < max:
         ans = quest_ans[list_of_quests[i]]
         msg = "privmsg " + recipient + " :" + list_of_quests[i] + "\n"
+        io.sendall(msg.encode('utf-8'))
 
-        if (send_new_quest == 1):
+        ready = select.select([io], [], [], 10)  # Wait for 10 seconds
+
+        if not ready[0]:
+            # Timeout occurred
+            msg = "privmsg " + recipient + " " + " :Time's up! You didn't answer in time.\n"
             io.sendall(msg.encode('utf-8'))
+            i += 1  # Move to the next question
+            continue
 
         answer = io.recv(4096).decode('utf-8')
-        print(answer)
-        if ("quit quiz" in answer):
-            msg = "privmsg " + recipient + " " + " :Quitting Quiz :)! Your score is: " + str(score) + "\n"
+
+        if "quit quiz" in answer:
+            msg = "privmsg " + recipient + " " + " :Quitting Quiz :)! Your score is: " + str(score) + "/" + str(i * 5) + "\n"
             io.sendall(msg.encode('utf-8'))
             break
-        if (ans in answer and "PRIVMSG" in answer and ":bot!bot" not in answer):
+
+        if ans in answer and "PRIVMSG" in answer and ":bot!bot" not in answer:
             msg = "privmsg " + recipient + " " + " :Correct\n"
             score += 5
-            i += 1
-            send_new_quest = 1
-            io.sendall(msg.encode('utf-8'))
-        elif ("PRIVMSG" in answer and ":bot!bot" not in answer):
+        elif "PRIVMSG" in answer and ":bot!bot" not in answer:
             msg = "privmsg " + recipient + " " + " :Wrong\n"
-            i += 1
-            send_new_quest = 1
-            io.sendall(msg.encode('utf-8'))
         else:
-            send_new_quest = 0
+            msg = ""  # Handle other cases as needed
 
-        if (i == max):
-            msg = "privmsg " + recipient + " " + " :Quiz finished:)! Your score is: " + str(score) + "\n"
-            io.sendall(msg.encode('utf-8'))
-            break
+        i += 1
+        io.sendall(msg.encode('utf-8'))
+        time.sleep(1)  # Add a short delay before moving to the next question
 
+    msg = "privmsg " + recipient + " " + " :Quiz finished! Your score is: " + str(score) + "/" + str(i * 5) + "\n"
+    io.sendall(msg.encode('utf-8'))
 
 def get_date(io, recipient):
     today = date.today()
@@ -91,21 +118,28 @@ def get_date(io, recipient):
 
 nickname = ""
 recipient = ""
+command = ""
 while (True):
 
-    print(nickname)
-    command = io.recv(4096).decode('utf-8')
-    if ("PRIVMSG" in command):
-        nickname = command.split('!')[0][1:]
-        recipient = command.split(' ')[2]
+    # print(nickname)
+    message = io.recv(4096).decode('utf-8')
+    if ("PRIVMSG" in message):
+        nickname = message.split('!')[0][1:]
+        recipient = message.split(' ')[2]
+        command = ''.join(i for i in message.split(' ')[3:])[1:]
     if ("#" not in recipient):
         recipient = nickname
-    if ("!quiz" in command):
+    if (command.startswith("!quiz")):
         do_quiz(io, recipient)
 
-    elif ("!date" in command):
+    elif (command.startswith("!date")):
         get_date(io, recipient)
-    if ("quit bot" in command):
+    
+    elif (command.startswith("!weather")):
+        asyncio.run(getweather(io, recipient))
+    elif (command.startswith("!help")):
+        io.sendall(f'privmsg {recipient} :Commands available: !quiz, !date, !weather, !quit\n'.encode('utf-8'))
+    if (command.startswith("!quit")):
         io.sendall(b'quiting ...\n')
         break
 
