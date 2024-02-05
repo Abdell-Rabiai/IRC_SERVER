@@ -19,7 +19,7 @@ void Server::launchBot(Client &client) {
     ss << ServerPort;
     char *port = strdup(ss.str().c_str());
     char *python3 = strdup("python3");
-    char *path = strdup("/Users/arabiai/Desktop/IRC_SERVER/SOURCES/bot.py");
+    char *path = strdup("/Users/arabiai/Desktop/IRC-SERVER/SOURCES/bot.py");
 
     char *args[] = {python3, path, port, NULL};
     pid_t child = fork();

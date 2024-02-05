@@ -13,7 +13,7 @@ class Socket
     private :
         int _domain; // AF_INET
         int _type; // SOCK_STREAM
-        int _protocol; // 0 for TCP/IP 
+        int _protocol; // IPPROTO_TCP for TCP/IP or IPPROTO_UDP for UDP
         int fd;
         struct sockaddr_in address;
 

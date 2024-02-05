@@ -134,33 +134,6 @@ void Server::setServerSocketfd(int serverSocketfd) {
 
 // methods of sever
 
-std::string printHostInfos(const struct sockaddr_in &address, Client *client) {
-	char hostname[NI_MAXHOST];      // The remote host name
-	char service[NI_MAXSERV];   // The port the remote host is connected to
-	socklen_t addr_len = sizeof(address);
-	int result = getnameinfo((struct sockaddr *)&address, addr_len, hostname, NI_MAXHOST, service, NI_MAXSERV, 0);
-	if (result) {
-		std::cout << "Error in getnameinfo: " << gai_strerror(result) << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	std::cout << hostname << " connected on port " << service << std::endl;
-	client->setHostName(hostname);
-	client->setPort(service);
-	return std::string(hostname);
-}
-
-int  Server::acceptNewConnection() {
-	int clientSocketfd = this->serverSocket.acceptSocket();
-	Client client(clientSocketfd);
-	std::string hostname = printHostInfos(this->serverSocket.getAddress(), &client); 
-	client.setHostName(hostname);
-	this->addClient(client, clientSocketfd);
-	// send a welcome message to the client
-	std::string clientSocketfdStr = std::to_string(clientSocketfd);
-	std::string welcome_msg = "Welcome to the Server number " + clientSocketfdStr + " \r\n";
-	send(clientSocketfd, welcome_msg.c_str(), welcome_msg.length(), 0);
-	return (clientSocketfd);
-}
 
 
 void Server::removeDisconnectedClient(int &socketfd) {
@@ -265,17 +238,17 @@ bool Server::processClientData(Client &client, std::string data) {
 		return false;
 	}
 
-	if (client.getNickname() == "") {
-		std::string response = "451 Please set a nickname first\r\n";
-		sendMessageToClient(response, client);
-		return false;
-	}
+	// if (client.getNickname() == "") {
+	// 	std::string response = "451 Please set a nickname first\r\n";
+	// 	sendMessageToClient(response, client);
+	// 	return false;
+	// }
 
-	if (client.getUsername() == "") {
-		std::string response = "451 Please set a username first\r\n";
-		sendMessageToClient(response, client);
-		return false;
-	}
+	// if (client.getUsername() == "") {
+	// 	std::string response = "451 Please set a username first\r\n";
+	// 	sendMessageToClient(response, client);
+	// 	return false;
+	// }
 	// 4. JOIN
 	if (command == "JOIN" || command == "join")
 		this->handleJoinCommand(client);
@@ -350,6 +323,34 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 		this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
 	}
 	return true;
+}
+
+std::string printHostInfos(const struct sockaddr_in &address, Client *client) {
+	char hostname[NI_MAXHOST];      // The remote host name
+	char service[NI_MAXSERV];   // The port the remote host is connected to
+	socklen_t addr_len = sizeof(address);
+	int result = getnameinfo((struct sockaddr *)&address, addr_len, hostname, NI_MAXHOST, service, NI_MAXSERV, 0);
+	if (result) {
+		std::cout << "Error in getnameinfo: " << gai_strerror(result) << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	std::cout << hostname << " connected on port " << service << std::endl;
+	client->setHostName(hostname);
+	client->setPort(service);
+	return std::string(hostname);
+}
+
+int  Server::acceptNewConnection() {
+	int clientSocketfd = this->serverSocket.acceptSocket();
+	Client client(clientSocketfd);
+	std::string hostname = printHostInfos(this->serverSocket.getAddress(), &client); 
+	client.setHostName(hostname);
+	this->addClient(client, clientSocketfd);
+	// send a welcome message to the client
+	std::string clientSocketfdStr = std::to_string(clientSocketfd);
+	std::string welcome_msg = "Welcome to the Server number " + clientSocketfdStr + " \r\n";
+	send(clientSocketfd, welcome_msg.c_str(), welcome_msg.length(), 0);
+	return (clientSocketfd);
 }
 
 bool Server::acceptNewMessage(int socketfd) {
