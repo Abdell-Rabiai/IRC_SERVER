@@ -22,10 +22,10 @@ SRCS = $(SOURCES)
 
 MAIN_SRC = main.cpp
 
-FLAGS =  -g3 -fsanitize=address #-Wall -Werror -Wextra 
+FLAGS =  -Wall -Werror -Wextra 
+CC = c++ -std=c++98
 
 HEADER = HEADERS/$(wildcard *.hpp)
-CC = c++ -std=c++11
 
 OBJ = $(addprefix $(OBJ_DIR)/, $(SRCS:.cpp=.o)) 
 

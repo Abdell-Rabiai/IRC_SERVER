@@ -81,18 +81,23 @@ int main() {
 // NICK tabi3a
 // USER arabiai * 0 :abdelouahed rabiai
 
-// PASS 1337
-// NICK black
-// USER ahmaymou * 0 :abderhman hmaymou
 
-// PASS 1337
-// NICK moha
-// USER momihamm * 0 :mohammed momimann
+// // PASS 1337
+// // NICK black
+// // USER ahmaymou * 0 :abderhman hmaymou
 
-start = time.time()
+// // PASS 1337
+// // NICK moha
+// // USER momihamm * 0 :mohammed momimann
 
-        # if (time.time() - start > 10):
-        #     msg = "privmsg " + recipient + " :Time's up! \n"
-        #     io.sendall(msg.encode('utf-8'))
-        #     i += 1
-        #     print("Time's up!")
+// start = time.time()
+
+// <<<<<<< HEAD
+//         # if (time.time() - start > 10):
+//         #     msg = "privmsg " + recipient + " :Time's up! \n"
+//         #     io.sendall(msg.encode('utf-8'))
+//         #     i += 1
+//         #     print("Time's up!")
+// =======
+// join #canal1,#canal2,#canal3
+// >>>>>>> 8e94704625d81ec8b37bce21d1ed86fddbb7ec7d

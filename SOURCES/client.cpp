@@ -11,7 +11,7 @@ Client::Client() {
 	this->isAuthenticated = false;
 	this->port = "";
 	this->command = "";
-	this->parameters = {};
+	this->parameters = std::vector<std::string>();
 	this->trailing = "";
 	this->isUserRegistered = false;
 }
@@ -26,7 +26,7 @@ Client::Client(int socketfd) {
     this->isAuthenticated = false;
 	this->port = "";
 	this->command = "";
-	this->parameters = {};
+	this->parameters = std::vector<std::string>();
 	this->trailing = "";
 	this->isUserRegistered = false;
 }
@@ -41,7 +41,7 @@ Client::Client(int socketfd, std::string nickname, std::string username) {
 	this->hostname = "";
 	this->port = "";
 	this->command = "";
-	this->parameters = {};
+	this->parameters = std::vector<std::string>();
 	this->trailing = "";
 	this->isUserRegistered = false;
 }
@@ -56,7 +56,7 @@ Client::Client(int socketfd, std::string nickname, std::string username, std::st
 	this->hostname = "";
 	this->port = "";
 	this->command = "";
-	this->parameters = {};
+	this->parameters = std::vector<std::string>();
 	this->trailing = "";
 	this->isUserRegistered = false;
 }
@@ -125,7 +125,7 @@ bool Client::authenticate(std::string ServerPassword) {
 	std::string response;
 	std::string password = this->parameters[0];
 	if (password != ServerPassword) {
-		response = "464 ERR_PASSWDMISMATCH ERROR :Password incorrect.\n";
+		response = "464 ERROR :Password incorrect.\n";
 		send(this->getSocketfd(), response.c_str(), response.length(), 0);
 		return false;
 	}

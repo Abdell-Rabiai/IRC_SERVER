@@ -57,7 +57,7 @@ class Client
         void removeChannelKey(Channel channel);  // MODE
         void giveOperatorPrivileges(Channel channel, Client client); // MODE
         void removeOperatorPrivileges(Channel channel, Client client); // MODE
-        void setChannelLimit(Channel channel, int limit); // MODE
+        void setChannelLimit(Channel channel, size_t limit); // MODE
         void removeChannelLimit(Channel channel); // MODE
 
 		// getters
@@ -67,6 +67,8 @@ class Client
 		std::string getRealname();
 		bool getIsOperator();
 		bool getIsAuthenticated();
+		// bool isNicknameSet();
+		// bool isUsernameSet();
 		std::string getBuffer();
 		std::string getCommand();
 		std::vector<std::string> getParameters();

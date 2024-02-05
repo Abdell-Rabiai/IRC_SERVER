@@ -8,26 +8,29 @@
 !quiz 
 */
 
+
 void Server::launchBot(Client &client) {
-    std::string msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + client.getNickname() + " :" + "Bot is ready :)" + "\n";
-    this->sendMessageToClient(msg, client);
-    msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + client.getNickname() + " :" + "commands: " + "\n";
-    this->sendMessageToClient(msg, client);
-    msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + client.getNickname() + " :" + "!date: shows todays date" + "\n";
-    this->sendMessageToClient(msg, client);
-    msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + client.getNickname() + " :" + "!quiz: launches a quiz game" + "\n";
-    this->sendMessageToClient(msg, client);
-    msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + client.getNickname() + " :" + "!weather: shows the weather" + "\n";
-    this->sendMessageToClient(msg, client);
-    msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " PRIVMSG " + client.getNickname() + " :" + "!quit: quits the bot" + "\n";
-    this->sendMessageToClient(msg, client);
-    char *python3 = "python3";
-    char *args[] = {"python3", "/Users/ahmaymou/Desktop/IRC_SERVER/SOURCES/bot.py", "1337", NULL};
+    (void)client;
+    int ServerPort = this->getServerPort();
+    std::stringstream ss;
+    ss << ServerPort;
+
+    char *port = strdup(ss.str().c_str());
+    char *python3 = strdup("python3");
+    char *first_path = getcwd(NULL, 0);
+
+    std::string path(first_path);
+    path.append("/SOURCES/bot.py");
+    char *args[] = {python3, (char *)path.c_str(), port, NULL};
     pid_t child = fork();
     if (child == 0) {
         execvp(python3, args);
+        exit(127);
     }
     else {
         std::cout << "Bot launched\n" << std::endl;
     }
+    free(python3);
+    free(port);
+    free(first_path);
 }

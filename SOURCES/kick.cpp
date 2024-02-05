@@ -27,7 +27,7 @@ void Server::handleKickCommand(Client &client) {
         this->sendMessageToClient(msg, client);
         return;
     }
-    msg = "341 " + client.getNickname() + " KICK :Kicked by " + client.getNickname();
+    msg = ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostName() + " KICK " + channelName + " " + nickname + " :Kicked by " + client.getNickname();
     std::string reason = client.getTrailing();
     if (!reason.empty())
         msg += " (" + reason + ")\r\n";

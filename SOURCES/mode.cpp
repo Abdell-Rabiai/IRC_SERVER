@@ -20,6 +20,17 @@
 
 */
 
+int Server::check_param(size_t i, std::vector<std::string> modes, Client &client) {
+  std::string msg = "";
+  std::string lim = i + 1 < modes.size() ? modes[i + 1] : "-1";
+      if (lim == "-1") {
+        msg = "461 " + client.getNickname() + " MODE :Not enough parameters" + "\r\n";
+        this->sendMessageToClient(msg, client);
+        return -1;
+      }
+      return 1337;
+}
+
 void Server::do_modes(Client &client, Channel &channel, std::vector<std::string> modes) {
   std::string msg = "";
   for (size_t i = 0; i < modes.size(); i++) {
@@ -46,6 +57,8 @@ void Server::do_modes(Client &client, Channel &channel, std::vector<std::string>
       msg = "324 " + client.getNickname() + " " + channel.getName() + " -t\r\n";
     }
     else if (modes[i] == "+k") {
+      if (this->check_param(i, modes, client) == -1)
+        return
       channel.setKey(modes[i + 1]);
       msg = "324 " + client.getNickname() + " " + channel.getName() + " +k " + modes[i + 1] + "\r\n";
       i++;
@@ -55,12 +68,16 @@ void Server::do_modes(Client &client, Channel &channel, std::vector<std::string>
       msg = "324 " + client.getNickname() + " " + channel.getName() + " -k\r\n";
     }
     else if (modes[i] == "+o") {
+      if (this->check_param(i, modes, client) == -1)
+        return;
       Client operatorClient = this->getClientByNickname(modes[i + 1]);;
       channel.addOperator(operatorClient);
       i++;
       msg = "324 " + client.getNickname() + " " + channel.getName() + " +o " + operatorClient.getNickname() + "\r\n";
     }
     else if (modes[i] == "-o") {
+      if (this->check_param(i, modes, client) == -1)
+        return;
       Client operatorClient = this->getClientByNickname(modes[i + 1]);
       if (operatorClient.getNickname() == channel.getCreatorNickname()){
         msg = "324 " + client.getNickname() + " " + channel.getName() + " :You Can't remove privs of the Creator!" + "\r\n";
@@ -77,7 +94,9 @@ void Server::do_modes(Client &client, Channel &channel, std::vector<std::string>
       msg = "324 " + client.getNickname() + " " + channel.getName() + " -o " + operatorClient.getNickname() + "\r\n";
     }
     else if (modes[i] == "+l") {
-      channel.setLimit(std::stoi(modes[i + 1]));
+      if (this->check_param(i, modes, client) == -1)
+        return;
+      channel.setLimit(stoi(modes[i + 1]));
       msg = "324 " + client.getNickname() + " " + channel.getName() + " +l " + modes[i + 1] + "\r\n";
       i++;
     }

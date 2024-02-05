@@ -12,7 +12,7 @@ class Server
 {
     private:
         Socket serverSocket;
-        const int MAX_CLIENTS = SOMAXCONN;
+        const int MAX_CLIENTS;
         int serverSocketfd;
         int serverPort;
         std::string password;
@@ -64,13 +64,15 @@ class Server
         void removeDisconnectedClient(int &socketfd);
         void addClient(Client client, int socketfd);
 
+        void removeChannel(std::string channelName);
 
         void sendMessageToClient(std::string message , Client client);
         void sendMessageToChannel(std::string message, Channel channel);
         void createChannel(std::string name, std::string password, Client &creator);
         
-        void handleNickCommand(Client &client);
+        bool handleNickCommand(Client &client);
         void handleUserCommand(Client &client);
+        
         void handleJoinCommand(Client &client);
         void JoinResponse(Client &client, std::string channelName);
         bool isChannelExist(std::string channelName);
@@ -82,7 +84,7 @@ class Server
         void handlePrivateMessageCommand(Client &client);
 
         bool handleRecievedData(Client &client, std::string data);
-        void logic(std::string channelName, std::string key, Client &creator);
+        void join_channel(std::string channelName, std::string key, Client &creator);
 
         // getters
         int getServerSocketfd();
@@ -129,10 +131,14 @@ class Server
         bool isOperatorInChannel(Client client, Channel channel);
         void do_modes(Client &client, Channel &channel, std::vector<std::string> modes);
         void launchBot(Client &client);
+        int check_param(size_t i, std::vector<std::string> modes, Client &client);
+
+        bool isRegistered(Client &client);
 
 };
 
 std::string printHostInfos(const struct sockaddr_in &address);
+std::vector<std::string>  split(std::string str, std::string delimiter);
 
 
 # endif // _SERVER_HPP_

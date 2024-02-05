@@ -2,11 +2,12 @@ import socket
 import sys
 from datetime import date
 import random
-try:
-  import python_weather
-except:
-    os.system('pip install python-weather')
-import python_weather
+import os
+# try:
+#   import python_weather
+# except:
+#     os.system('pip install python-weather')
+# import python_weather
 import time
 import select
 
@@ -92,7 +93,7 @@ def do_quiz(io, recipient):
         answer = io.recv(4096).decode('utf-8')
 
         if "quit quiz" in answer:
-            msg = "privmsg " + recipient + " " + " :Quitting Quiz :)! Your score is: " + str(score) + "/" + str(i * 5) + "\n"
+            msg = "privmsg " + recipient + " " + " :Quitting Quiz :)! Your score is: " + str(score) + "/" + str((i + 1 % 100) * 5) + "\n"
             io.sendall(msg.encode('utf-8'))
             break
 
@@ -108,8 +109,23 @@ def do_quiz(io, recipient):
         io.sendall(msg.encode('utf-8'))
         time.sleep(1)  # Add a short delay before moving to the next question
 
-    msg = "privmsg " + recipient + " " + " :Quiz finished! Your score is: " + str(score) + "/" + str(i * 5) + "\n"
+    msg = "privmsg " + recipient + " " + " :Quiz finished! Your score is: " + str(score) + "/" + str((i + 1 % 100)  * 5) + "\n"
     io.sendall(msg.encode('utf-8'))
+
+def send_commands(io, recipient):
+    io.sendall(f"privmsg {recipient} :Bot is ready :)\n".encode('utf-8'))
+    time.sleep(1)
+    io.sendall(f"privmsg {recipient} :commands: \n".encode('utf-8'))
+    time.sleep(1)
+    io.sendall(f"privmsg {recipient} :!date: shows todays date\n".encode('utf-8'))
+    time.sleep(1)
+    io.sendall(f"privmsg {recipient} :!quiz: launches a quiz game\n".encode('utf-8'))
+    time.sleep(1)
+    io.sendall(f"privmsg {recipient} :!weather: shows the weather\n".encode('utf-8'))
+    time.sleep(1)
+    io.sendall(f"privmsg {recipient} :!quit: quits the bot\n".encode('utf-8'))
+    time.sleep(1)
+    io.sendall(f"privmsg {recipient} :!help: shows cot commands\n".encode('utf-8'))
 
 def get_date(io, recipient):
     today = date.today()
@@ -120,6 +136,7 @@ def get_date(io, recipient):
 nickname = ""
 recipient = ""
 command = ""
+send_cmds = 0
 while (True):
 
     # print(nickname)
@@ -130,6 +147,10 @@ while (True):
         command = ''.join(i for i in message.split(' ')[3:])[1:]
     if ("#" not in recipient):
         recipient = nickname
+    if (send_commands == 0):
+        send_commands(io, recipient)
+        send_cmds = 1
+
     if (command.startswith("!quiz")):
         do_quiz(io, recipient)
 
@@ -141,8 +162,12 @@ while (True):
     elif (command.startswith("!help")):
         io.sendall(f'privmsg {recipient} :Commands available: !quiz, !date, !weather, !quit\n'.encode('utf-8'))
     if (command.startswith("!quit")):
-        io.sendall(b'quiting ...\n')
+        io.sendall(f'privmsg {recipient} :quitting ...\n'.encode('utf-8'))
         break
 
 # close the connection
 # io.close()
+
+# pass 1337
+# nick bot
+# user bot
