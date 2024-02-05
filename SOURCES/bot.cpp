@@ -9,26 +9,28 @@
 */
 
 
-
-
-
 void Server::launchBot(Client &client) {
     (void)client;
-    int  ServerPort = this->getServerPort();
+    int ServerPort = this->getServerPort();
     std::stringstream ss;
     ss << ServerPort;
+
     char *port = strdup(ss.str().c_str());
     char *python3 = strdup("python3");
-    char *path = strdup("/Users/arabiai/Desktop/IRC_SERVER/SOURCES/bot.py");
+    char *first_path = getcwd(NULL, 0);
 
-    char *args[] = {python3, path, port, NULL};
+    std::string path(first_path);
+    path.append("/SOURCES/bot.py");
+    char *args[] = {python3, (char *)path.c_str(), port, NULL};
     pid_t child = fork();
     if (child == 0) {
         execvp(python3, args);
+        exit(127);
     }
     else {
         std::cout << "Bot launched\n" << std::endl;
     }
     free(python3);
-    free(path);
+    free(port);
+    free(first_path);
 }
