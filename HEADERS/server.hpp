@@ -133,6 +133,8 @@ class Server
         void launchBot(Client &client);
         int check_param(size_t i, std::vector<std::string> modes, Client &client);
 
+        bool isRegistered(Client &client);
+
 };
 
 std::string printHostInfos(const struct sockaddr_in &address);

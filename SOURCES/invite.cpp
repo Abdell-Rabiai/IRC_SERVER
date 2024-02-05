@@ -9,11 +9,8 @@ void Server::inviteToChannel(Client &inviter, Channel &channel, Client &invitedC
     
         std::string msg = "";
         std::string invitedNickname = invitedClient.getNickname();
-        // msg = "341 " + inviter.getNickname() + " " + invitedNickname + " " + channel.getName() + " :Inviting you to channel" + "\r\n";
-        // this->sendMessageToClient(msg, invitedClient);
     
         if (!this->isChannelExist(channel.getName()) || invitedNickname.empty()) {
-            // std::cout << "{{{{" << this->isChannelExist(channel.getName()) << "----" << channel.getName() << "---" << invitedNickname << "}}}}" << std::endl;
             msg = "401 " + inviter.getNickname() + " " + invitedNickname + " :No such nick/channel" + "\r\n";
             this->sendMessageToClient(msg, inviter);
             return;
@@ -23,24 +20,9 @@ void Server::inviteToChannel(Client &inviter, Channel &channel, Client &invitedC
             this->sendMessageToClient(msg, inviter);
             return;
         }
-        if (channel.getIsLimited() && channel.getUsers().size() >= channel.getLimit() && !this->isOperatorInChannel(inviter, channel)) {
-            msg = "405 " + inviter.getNickname() + " " + channel.getName() + " :You have joined too many channels" + "\r\n";
+        if (channel.getIsLimited() && channel.getUsers().size() >= channel.getLimit()) {
+            msg = "471 " + inviter.getNickname() + " " + channel.getName() + " :Cannot join channel (+l) - Channel is full\r\n";
             this->sendMessageToClient(msg, inviter);
-            return;
-        }
-        // if (this->isProtected && this->key != invitedClient.getPassword()) {
-        //     msg = "475 " + inviter.getNickname() + " " + channel.getName() + " :Cannot join channel (+k)" + "\r\n";
-        //     this->sendMessageToClient(msg, inviter);
-        //     return;
-        // }
-        if (channel.getIsLimited() && this->isOperatorInChannel(inviter, channel)) {
-            msg = "473 " + inviter.getNickname() + " " + channel.getName() + " :" + "Cannot join channel (+l)" + "\r\n";
-            this->sendMessageToClient(msg, invitedClient);
-            return;
-        }
-        if (channel.getIsInviteOnly() && this->isOperatorInChannel(inviter, channel)) {
-            msg = "341 " + inviter.getNickname() + " " + invitedNickname + " " + channel.getName() + " :Inviting you to channel" + "\r\n";
-            this->sendMessageToClient(msg, invitedClient);
             return;
         }
         if (channel.isUserInChannel(invitedClient)) {

@@ -22,7 +22,7 @@ SRCS = $(SOURCES)
 
 MAIN_SRC = main.cpp
 
-FLAGS =  -g3 -fsanitize=address #-Wall -Werror -Wextra 
+FLAGS =  -Wall -Werror -Wextra 
 CC = c++ -std=c++98
 
 HEADER = HEADERS/$(wildcard *.hpp)
@@ -49,6 +49,7 @@ $(OBJ_DIR)/%.o: %.cpp $(HEADER)
 $(NAME) : $(OBJ) $(MAIN_SRC) $(HEADER)
 	@$(CC) $(FLAGS) $(MAIN_SRC) $(OBJ) -o $(NAME)
 	@echo "\n\n\t$(Cyan) Enjoooy :)\n $(Color_Off)"
+	@pip install -r SOURCES/requirements.txt > /dev/null
 
 clean :
 	@rm -rf $(OBJ) $(OBJ_DIR)

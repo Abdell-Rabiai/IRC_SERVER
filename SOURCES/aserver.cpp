@@ -18,8 +18,6 @@ bool Server::isOperatorInChannel(Client client, Channel channel) {
 	return false;
 }
 
-
-
 Server::Server(int port, std::string password) : MAX_CLIENTS(SOMAXCONN) {
 	this->serverPort = port;
 	this->password = password;
@@ -134,6 +132,33 @@ void Server::setServerSocketfd(int serverSocketfd) {
 
 // methods of sever
 
+std::string printHostInfos(const struct sockaddr_in &address, Client *client) {
+	char hostname[NI_MAXHOST];      // The remote host name
+	char service[NI_MAXSERV];   // The port the remote host is connected to
+	socklen_t addr_len = sizeof(address);
+	int result = getnameinfo((struct sockaddr *)&address, addr_len, hostname, NI_MAXHOST, service, NI_MAXSERV, 0);
+	if (result) {
+		std::cout << "Error in getnameinfo: " << gai_strerror(result) << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	std::cout << "Client with hostname: " << hostname << " connected on port number: " << service << std::endl;
+	client->setHostName(hostname);
+	client->setPort(service);
+	return std::string(hostname);
+}
+
+int  Server::acceptNewConnection() {
+	int clientSocketfd = this->serverSocket.acceptSocket();
+	Client client(clientSocketfd);
+	std::string hostname = printHostInfos(this->serverSocket.getAddress(), &client); 
+	client.setHostName(hostname);
+	this->addClient(client, clientSocketfd);
+	// send a welcome message to the client
+	std::string clientSocketfdStr = std::to_string(clientSocketfd);
+	std::string welcome_msg = "Welcome to the Server number " + clientSocketfdStr + " \r\n";
+	send(clientSocketfd, welcome_msg.c_str(), welcome_msg.length(), 0);
+	return (clientSocketfd);
+}
 
 
 void Server::removeDisconnectedClient(int &socketfd) {
@@ -191,22 +216,22 @@ void Server::handleUserCommand(Client &client) {
 	}
 }
 
+bool Server::isRegistered(Client &client) {
+	if (client.getNickname() == "" || client.getUsername() == "" || !client.getIsAuthenticated()) {
+		std::string response = "451 Please register first\r\n";
+		this->sendMessageToClient(response, client);
+		return false;
+	}
+	return true;
+}
+
 bool Server::processClientData(Client &client, std::string data) {
 
 	this->fdToClient[client.getSocketfd()].parseIrcMessage(data);
 	std::string command = this->fdToClient[client.getSocketfd()].getCommand();
-	// print parameters
-	std::cout << "Activity detected: Client number " << client.getSocketfd() << "------------------------------------------"  << std::endl;
-	std::cout << "command: [" << command <<"]"<< std::endl;
-	std::cout << "parameters: ";
-	for (size_t i = 0; i < this->fdToClient[client.getSocketfd()].getParameters().size(); i++) {
-		std::cout << "[" << this->fdToClient[client.getSocketfd()].getParameters()[i] << "] ";
-	}
-	std::cout << std::endl;
 	// check not enough parameters
 	if (command != "" && this->fdToClient[client.getSocketfd()].getParameters().size() == 0
-		&& command != "PART" && command != "part" &&  command != "!quiz" && command != "!QUIZ"
-		&& command != "!date" && command != "!DATE" && command != "QUIT" && command != "quit")
+		&& command != "PART" && command != "part" &&  command != "!bot" && command != "!BOT" && command != "QUIT" && command != "quit")
 	{
 		std::string response = "461 " + client.getNickname() + " " + command + " :Not enough parameters\r\n";
 		sendMessageToClient(response, client);
@@ -231,64 +256,49 @@ bool Server::processClientData(Client &client, std::string data) {
 	// 3. USERNAME
 	if (command == "USER" || command == "user")
 		this->handleUserCommand(client);
-
-	if (!client.getIsAuthenticated()) {
-		std::string response = "451 Please set a password first\r\n";
-		sendMessageToClient(response, client);
-		return false;
-	}
-
-	// if (client.getNickname() == "") {
-	// 	std::string response = "451 Please set a nickname first\r\n";
-	// 	sendMessageToClient(response, client);
-	// 	return false;
-	// }
-
-	// if (client.getUsername() == "") {
-	// 	std::string response = "451 Please set a username first\r\n";
-	// 	sendMessageToClient(response, client);
-	// 	return false;
-	// }
+	
 	// 4. JOIN
-	if (command == "JOIN" || command == "join")
+	if ((command == "JOIN" || command == "join") && this->isRegistered(client))
 		this->handleJoinCommand(client);
 	// 5. PRIVMSG
-	if (command == "PRIVMSG" || command == "privmsg")
+	if ((command == "PRIVMSG" || command == "privmsg") && this->isRegistered(client))
 		this->handlePrivateMessageCommand(client);
 	// 6. KICK
-	if (command == "KICK" || command == "kick")
+	if ((command == "KICK" || command == "kick") && this->isRegistered(client))
 		this->handleKickCommand(client);
 	// 7. INVITE
-	if (command == "INVITE" || command == "invite")
+	if ((command == "INVITE" || command == "invite") && this->isRegistered(client))
 		this->handleInviteCommand(client);
 	// 8. TOPIC
-	if (command == "TOPIC" || command == "topic")
+	if ((command == "TOPIC" || command == "topic") && this->isRegistered(client))
 		this->handleTopicCommand(client);
 	// 8. MODE
-	if (command == "MODE" || command == "mode")
+	if ((command == "MODE" || command == "mode") && this->isRegistered(client))
 		this->handleModeCommand(client);
 	// 7. PART
-	if (command == "PART" || command == "part")
+	if ((command == "PART" || command == "part") && this->isRegistered(client))
 		this->handlePartCommand(client);
 	// 8. NOTICE
-	if (command == "NOTICE" || command == "notice")
+	if ((command == "NOTICE" || command == "notice") && this->isRegistered(client))
 		this->handleNoticeCommand(client);
 	// 9. BOT
-	if (command == "!quiz" || command == "!QUIZ" || command == "!date" || command == "!DATE")
+	if ((command == "!bot" || command == "!BOT") && this->isRegistered(client))
 		this->launchBot(client);
 	// 10. QUIT : close the connection
-	if (command == "QUIT" || command == "quit") {
+	if ((command == "QUIT" || command == "quit") && this->isRegistered(client)) {
 		close(client.getSocketfd());
 		return false;
 	}
+	if (!client.getIsUserRegistered() && client.getIsAuthenticated() && client.getNickname() != "" && client.getUsername() != "")
+		this->sendConfimationMessage(client);
+	std::cout << "Activity detected: Client number " << client.getSocketfd() << "------------------------------------------"  << std::endl;
 	std::cout << "client info: " << std::endl;
 	std::cout << "nickname: [" << client.getNickname() << "]" << std::endl;
 	std::cout << "username: [" << client.getUsername() << "]" << std::endl;
 	std::cout << "realname: [" << client.getRealname() << "]" << std::endl;
-	std::cout << "isAuthenticated: [" << (client.getIsAuthenticated() ? "YES" : "NO") << "]" << std::endl;
+	std::cout << "isUserRegistered: [" << (client.getIsUserRegistered() ? "YES" : "NO") << "]" << std::endl;
 	std::cout << "isOperator: [" << (client.getIsOperator() ? "YES" : "NO") << "]" << std::endl;
-	if (!client.getIsUserRegistered() && client.getIsAuthenticated() && client.getNickname() != "" && client.getUsername() != "")
-		this->sendConfimationMessage(client);
+	std::cout << "END of detected: Client number " << client.getSocketfd() << "--------------------------------------------"  << std::endl;
 	return true;
 }
 
@@ -303,7 +313,6 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 	if (pos != std::string::npos) {
 		std::vector<std::string> cmds = split(buffer, "\r\n");
 		for (size_t i = 0; i < cmds.size() - 1; i++) {
-			std::cout << "(" << cmds[i] << ")" << std::endl;
 			if (!this->processClientData(client, cmds[i])) {
 				this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
 				return false;
@@ -314,7 +323,6 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 	else if (pos2 != std::string::npos) {
 		std::vector<std::string> cmds = split(buffer, "\n");
 		for (size_t i = 0; i < cmds.size() - 1; i++) {
-			std::cout << "(" << cmds[i] << ")" << std::endl;
 			if (!this->processClientData(client, cmds[i])) {
 				this->fdToBuffer[client.getSocketfd()].clear(); // clear the buffer for next commands
 				return false;

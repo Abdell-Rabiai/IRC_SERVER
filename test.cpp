@@ -67,30 +67,37 @@ void parseIrcMessage(std::string buffer) {
 }
 
 int main() {
-    std::string buffer = "TOPIC #chan :";
-    // std::string msg = "USER username * 0    :realname\n";
-    // std::cout << std::endl;
-    // std::cout << std::endl;
-    parseIrcMessage(buffer);
+	system("python3 SOURCES/bot.py 1337");
+    // std::string ircMessage = "PASS 1337\nNICK tabi3a\nUSER arabiai * 0 :abdelouahed rabiai\n";
+    // parseIrcMessage(ircMessage);
+    // ircMessage = "PASS 1337\nNICK black\nUSER ahmaymou * 0 :abderhman hmaymou\n";
+    // parseIrcMessage(ircMessage);
+    // ircMessage = "PASS 1337\nNICK moha\nUSER momihamm * 0 :mohammed momimann\n";
+    // parseIrcMessage(ircMessage);
     return 0;
 }
 
+// PASS 1337
+// NICK tabi3a
+// USER arabiai * 0 :abdelouahed rabiai
 
 
-PASS 1337
-NICK tabi3a
-USER arabiai * 0    :abdelouahed rabiai
+// // PASS 1337
+// // NICK black
+// // USER ahmaymou * 0 :abderhman hmaymou
 
-PASS 1337
-NICK moha
-USER momihamm * 0    :Mohammed momihamm bo okhna
+// // PASS 1337
+// // NICK moha
+// // USER momihamm * 0 :mohammed momimann
 
-PASS 1337
-NICK blackhorse
-USER ahmaymou * 0    :abderhamn hamama 
+// start = time.time()
 
-PASS 1337
-NICK hssi
-USER hssain * 0    :hssain haitkadir
-
-join #canal1,#canal2,#canal3
+// <<<<<<< HEAD
+//         # if (time.time() - start > 10):
+//         #     msg = "privmsg " + recipient + " :Time's up! \n"
+//         #     io.sendall(msg.encode('utf-8'))
+//         #     i += 1
+//         #     print("Time's up!")
+// =======
+// join #canal1,#canal2,#canal3
+// >>>>>>> 8e94704625d81ec8b37bce21d1ed86fddbb7ec7d
