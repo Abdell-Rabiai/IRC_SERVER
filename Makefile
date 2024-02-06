@@ -22,7 +22,7 @@ SRCS = $(SOURCES)
 
 MAIN_SRC = main.cpp
 
-FLAGS =  -Wall -Werror -Wextra 
+FLAGS = -g -fsanitize=address #-Wall -Werror -Wextra 
 CC = c++ -std=c++98
 
 HEADER = HEADERS/$(wildcard *.hpp)

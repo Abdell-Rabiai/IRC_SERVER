@@ -101,3 +101,11 @@ int main() {
 // =======
 // join #canal1,#canal2,#canal3
 // >>>>>>> 8e94704625d81ec8b37bce21d1ed86fddbb7ec7d
+
+
+clients_using_quiz += 1
+        if (clients_using_quiz > 20):
+            io.sendall(f'privmsg {recipient} :bot is busy, wait a little bit, and retry\n'.encode('utf-8'))
+            continue
+        process = Process(target=do_quiz, args=(io, recipient))
+        process.start()
