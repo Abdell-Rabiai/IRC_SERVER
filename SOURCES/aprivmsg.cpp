@@ -4,8 +4,8 @@
 void Server::sendMessageToClient(std::string message , Client client) {
 	int bytessent = send(client.getSocketfd(), message.c_str(), message.size(), 0);
 	if (bytessent == -1) {
-		std::cerr << "Error: send" << std::endl;
-		throw std::runtime_error("Error in send! Quitting...");
+		std::cerr << "Error: in send() << " << strerror(errno) << std::endl;
+		return;
 	}
 }
 

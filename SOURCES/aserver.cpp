@@ -338,14 +338,43 @@ int  Server::acceptNewConnection() {
 	send(clientSocketfd, welcome_msg.c_str(), welcome_msg.length(), 0);
 	return (clientSocketfd);
 }
+/*
+GitHub Copilot: In this function, the buffer size is set to 4096 bytes.
+If a user sends data that is larger than this, the `recv` function will only receive the first 4096 bytes of data.
+The remaining data will be left in the TCP/IP stack, waiting for the next `recv` call.
 
+This is because `recv` does not automatically read all available data.
+It reads up to the specified buffer size and leaves any remaining data for subsequent `recv` calls. If you want to ensure that all data is received.
+you would need to implement a loop that continues to call `recv` until no more data is available.
+
+Here's a simple example of how you might do this:
+
+std::string Server::receiveAll(int socketfd) {
+    char buffer[4096];
+    std::string data;
+
+    while (true) {
+        memset(buffer, 0, 4096);
+        int bytesReceived = recv(socketfd, buffer, 4096, 0);
+        if (bytesReceived <= 0) {
+            break;
+        }
+        data += std::string(buffer, 0, bytesReceived);
+    }
+
+    return data;
+}
+
+In this example, `recv` is called in a loop until it returns 0 or a negative number.
+indicating that no more data is available or an error occurred, respectively.
+*/
 bool Server::acceptNewMessage(int socketfd) {
 	char buffer[4096];
 	memset(buffer, 0, 4096);
 	int bytesReceived = recv(socketfd, buffer, 4096, 0);
 	if (bytesReceived == -1) {
-		perror("Error in recv");
-		throw std::runtime_error("Error in recv! Quitting...");
+		std::cerr << "Error in recv" << std::endl;
+		return true;
 	}
 	if (bytesReceived == 0) {
 		this->removeDisconnectedClient(socketfd); /**HERE**/
