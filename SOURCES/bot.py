@@ -19,21 +19,6 @@ port = sys.argv[1]
 io = socket.create_connection(('localhost', int(port)))
 
 
-async def getweather(io, recipient):
-  # declare the client. the measuring unit used defaults to the metric system (celcius, km/h, etc.)
-  async with python_weather.Client(unit=python_weather.IMPERIAL) as client:
-    # fetch a weather forecast from a city
-    weather = await client.get('Casablanca')
-    
-    temp = round((weather.current.temperature - 32) * 5/9, 2)
-    io.sendall(f'privmsg {recipient} :Today\'s temperature in Casablanca is: {temp} °C\n'.encode('utf-8'))
-    
-    # get the weather forecast for a few days
-    for forecast in weather.forecasts:
-      temp = round((forecast.temperature - 32) * 5/9, 2)
-      io.sendall(f'privmsg {recipient} :{forecast.date}: {temp} °C\n'.encode('utf-8'))
-
-
 # log into the server
 io.sendall(b'pass 1337\nuser bot\nnick bot\n')
 
@@ -156,9 +141,7 @@ while (True):
 
     elif (command.startswith("!date")):
         get_date(io, recipient)
-    
-    elif (command.startswith("!weather")):
-        asyncio.run(getweather(io, recipient))
+
     elif (command.startswith("!help")):
         io.sendall(f'privmsg {recipient} :Commands available: !quiz, !date, !weather, !quit\n'.encode('utf-8'))
     elif (command.startswith("!quit")):
@@ -166,3 +149,4 @@ while (True):
         break
     elif ("PRIVMSG" in message):
         io.sendall(f'privmsg {recipient} :Invalid BOT command\n'.encode('utf-8'))
+        io.sendall(f'privmsg {recipient} :Refer to !help to see available commands\n'.encode('utf-8'))

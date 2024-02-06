@@ -8,7 +8,6 @@
 !quiz 
 */
 
-
 void Server::launchBot(Client &client) {
     (void)client;
     int ServerPort = this->getServerPort();

@@ -67,6 +67,8 @@ void Server::handleTopicCommand(Client &client) {
         }
         channel.setTopic(Topic);
         msg = "332 " + client.getNickname() + " " + channelName + " :" + channel.getTopic() + "\r\n";
+        channel.setTopicTime(this->getCurrentTime());
+        channel.setTopicSetterNickname(client.getNickname());
         this->sendMessageToClient(msg, client);
     }
 }

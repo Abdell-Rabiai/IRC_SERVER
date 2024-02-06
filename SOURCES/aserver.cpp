@@ -221,7 +221,7 @@ bool Server::processClientData(Client &client, std::string data) {
 	if (command != "" && this->fdToClient[client.getSocketfd()].getParameters().size() == 0
 		&& command != "PART" && command != "part" &&  command != "!bot" && command != "!BOT" && command != "QUIT" && command != "quit")
 	{
-		std::string response = "461 " + client.getNickname() + " " + command + " :Not enough parameters\r\n";
+		std::string response = "461 " + client.getNickname() + " " + command + " :Invalid Command OR Not enough parameters\r\n";
 		this->sendMessageToClient(response, client);
 		return false;
 	}
