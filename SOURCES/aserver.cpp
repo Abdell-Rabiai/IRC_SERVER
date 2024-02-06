@@ -147,18 +147,6 @@ std::string printHostInfos(const struct sockaddr_in &address, Client *client) {
 	return std::string(hostname);
 }
 
-int  Server::acceptNewConnection() {
-	int clientSocketfd = this->serverSocket.acceptSocket();
-	Client client(clientSocketfd);
-	std::string hostname = printHostInfos(this->serverSocket.getAddress(), &client); 
-	client.setHostName(hostname);
-	this->addClient(client, clientSocketfd);
-	// send a welcome message to the client
-	std::string clientSocketfdStr = std::to_string(clientSocketfd);
-	std::string welcome_msg = "Welcome to the Server number " + clientSocketfdStr + " \r\n";
-	send(clientSocketfd, welcome_msg.c_str(), welcome_msg.length(), 0);
-	return (clientSocketfd);
-}
 
 
 void Server::removeDisconnectedClient(int &socketfd) {
@@ -234,7 +222,7 @@ bool Server::processClientData(Client &client, std::string data) {
 		&& command != "PART" && command != "part" &&  command != "!bot" && command != "!BOT" && command != "QUIT" && command != "quit")
 	{
 		std::string response = "461 " + client.getNickname() + " " + command + " :Not enough parameters\r\n";
-		sendMessageToClient(response, client);
+		this->sendMessageToClient(response, client);
 		return false;
 	}
 	// 1.AUTHENTICATION
@@ -246,7 +234,7 @@ bool Server::processClientData(Client &client, std::string data) {
 		}
 		else {
 			std::string response = "462 Already registred, You may not reregister\r\n";
-			sendMessageToClient(response, client);
+			this->sendMessageToClient(response, client);
 		}
 	}
 	// 2. NICKNAME
@@ -292,13 +280,18 @@ bool Server::processClientData(Client &client, std::string data) {
 	if (!client.getIsUserRegistered() && client.getIsAuthenticated() && client.getNickname() != "" && client.getUsername() != "")
 		this->sendConfimationMessage(client);
 	std::cout << "Activity detected: Client number " << client.getSocketfd() << "------------------------------------------"  << std::endl;
-	std::cout << "client info: " << std::endl;
+	std::cout << "command: [" << command << "]\t";
+	std::cout << "parameters: ";
+	for (size_t i = 0; i < this->fdToClient[client.getSocketfd()].getParameters().size(); i++) {
+		std::cout << "[" << this->fdToClient[client.getSocketfd()].getParameters()[i] << "] ";
+	}
+	std::cout << "\nclient info: " << std::endl;
 	std::cout << "nickname: [" << client.getNickname() << "]" << std::endl;
 	std::cout << "username: [" << client.getUsername() << "]" << std::endl;
 	std::cout << "realname: [" << client.getRealname() << "]" << std::endl;
 	std::cout << "isUserRegistered: [" << (client.getIsUserRegistered() ? "YES" : "NO") << "]" << std::endl;
 	std::cout << "isOperator: [" << (client.getIsOperator() ? "YES" : "NO") << "]" << std::endl;
-	std::cout << "END of detected: Client number " << client.getSocketfd() << "--------------------------------------------"  << std::endl;
+	std::cout << "END of Activity: Client number " << client.getSocketfd() << "--------------------------------------------"  << std::endl;
 	return true;
 }
 
@@ -333,21 +326,6 @@ bool Server::handleRecievedData(Client &client, std::string data) {
 	return true;
 }
 
-std::string printHostInfos(const struct sockaddr_in &address, Client *client) {
-	char hostname[NI_MAXHOST];      // The remote host name
-	char service[NI_MAXSERV];   // The port the remote host is connected to
-	socklen_t addr_len = sizeof(address);
-	int result = getnameinfo((struct sockaddr *)&address, addr_len, hostname, NI_MAXHOST, service, NI_MAXSERV, 0);
-	if (result) {
-		std::cout << "Error in getnameinfo: " << gai_strerror(result) << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	std::cout << hostname << " connected on port " << service << std::endl;
-	client->setHostName(hostname);
-	client->setPort(service);
-	return std::string(hostname);
-}
-
 int  Server::acceptNewConnection() {
 	int clientSocketfd = this->serverSocket.acceptSocket();
 	Client client(clientSocketfd);
@@ -366,11 +344,11 @@ bool Server::acceptNewMessage(int socketfd) {
 	memset(buffer, 0, 4096);
 	int bytesReceived = recv(socketfd, buffer, 4096, 0);
 	if (bytesReceived == -1) {
-		std::cerr << "Error in recv(). Quitting" << std::endl;
-		exit(EXIT_FAILURE);
+		perror("Error in recv");
+		throw std::runtime_error("Error in recv! Quitting...");
 	}
 	if (bytesReceived == 0) {
-		this->removeDisconnectedClient(socketfd);/**HERE**/
+		this->removeDisconnectedClient(socketfd); /**HERE**/
 		return false;
 	}
 	if (buffer[0] == '\n') {

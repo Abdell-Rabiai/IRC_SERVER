@@ -15,7 +15,7 @@ void Server::inviteToChannel(Client &inviter, Channel &channel, Client &invitedC
             this->sendMessageToClient(msg, inviter);
             return;
         }
-        if (channel.getIsInviteOnly() && !this->isOperatorInChannel(inviter, channel)) {
+        if (!this->isOperatorInChannel(inviter, channel)) {
             msg = "482 " + inviter.getNickname() + " " + channel.getName() + " :You're not channel operator" + "\r\n";
             this->sendMessageToClient(msg, inviter);
             return;

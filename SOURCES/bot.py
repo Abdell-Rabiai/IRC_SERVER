@@ -161,13 +161,8 @@ while (True):
         asyncio.run(getweather(io, recipient))
     elif (command.startswith("!help")):
         io.sendall(f'privmsg {recipient} :Commands available: !quiz, !date, !weather, !quit\n'.encode('utf-8'))
-    if (command.startswith("!quit")):
+    elif (command.startswith("!quit")):
         io.sendall(f'privmsg {recipient} :quitting ...\n'.encode('utf-8'))
         break
-
-# close the connection
-# io.close()
-
-# pass 1337
-# nick bot
-# user bot
+    elif ("PRIVMSG" in message):
+        io.sendall(f'privmsg {recipient} :Invalid BOT command\n'.encode('utf-8'))

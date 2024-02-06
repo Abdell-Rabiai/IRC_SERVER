@@ -5,7 +5,7 @@ void Server::broadcastMessageOnChannel(Channel channel, std::string message) {
 	if (this->isChannelExist(channel.getName())) {
 		for (size_t i = 0; i < channel.getUsers().size(); i++) {
 			if (channel.getUsers()[i].getSocketfd() >= 0) {
-				sendMessageToClient(message, channel.getUsers()[i]);
+				this->sendMessageToClient(message, channel.getUsers()[i]);
 			}
 		}
 	}

@@ -19,6 +19,19 @@ Socket::Socket(int domain, int type, int protocol, int port, unsigned long ip) {
         std::cerr << "Error creating socket" << std::endl;
         exit(EXIT_FAILURE);
     }
+    // sets the socket option to reuse the localaddress and port
+    int option = 1;
+    int err = setsockopt(this->fd, SOL_SOCKET, SO_REUSEADDR, &option, sizeof(option));
+    if (err < 0)
+        throw std::runtime_error("Error setting socket option");
+    // set the socket to non-blocking : F_SETFL is used to set the file status flags to the value specified by arg
+    // arg is the value to set the file status flags to, which is O_NONBLOCK
+    int flg = fcntl(this->fd, F_SETFL, O_NONBLOCK);
+    if (flg < 0)
+        throw std::runtime_error("Error getting socket flags");
+    // this sets the socket to non-blocking mode
+    // IO operations (recv, send, accept, connect) willnot block if there is no data to read or write
+    // or no connection to accept or no connection to connect to
 }
 
 Socket::Socket() {
@@ -76,6 +89,10 @@ int Socket::acceptSocket() {
         std::cerr << "Error accepting new connection" << std::endl;
         exit(EXIT_FAILURE);
     }
+    // set the client socket to be non-blocking
+    int flg = fcntl(clientSocketfd, F_SETFL, O_NONBLOCK);
+    if (flg < 0)
+        throw std::runtime_error("Error getting socket flags");
     return clientSocketfd;
 }
 

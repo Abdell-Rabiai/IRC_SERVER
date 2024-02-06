@@ -54,7 +54,7 @@ void Server::broadcastMessageOnServer(std::string &buffer, int senderSocketfd) {
 	send(senderSocketfd, thankYouMsg.c_str(), thankYouMsg.size() + 1, 0);
 	for (size_t i = 1; i < this->pollfds.size(); i++) {
 		if (this->pollfds[i].fd != senderSocketfd && this->pollfds[i].fd >= 0) {
-			sendMessageToClient(msg, this->fdToClient[this->pollfds[i].fd]);
+			this->sendMessageToClient(msg, this->fdToClient[this->pollfds[i].fd]);
 		}
 	}
 }

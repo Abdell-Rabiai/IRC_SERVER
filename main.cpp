@@ -23,21 +23,18 @@ bool check_port(char *port)
 int main(int argc, char **argv)
 {
     try {
-
         if (argc != 3)
         {
-            std::cerr << "Usage: ./server <password> <port> " << std::endl;
+            std::cerr << "Usage: ./server <port> <password>" << std::endl;
             return 1;
         }
-        std::string password = argv[1];
-        if (password.empty() || !check_port(argv[2]))
+        std::string password = argv[2];
+        if (password.empty() || !check_port(argv[1]))
         {
             std::cerr << "Password Empty Or Port Not Valid" << std::endl;
             return 1;
         }
-        int port = atoi(argv[2]);
-        std::cout << password << std::endl;
-
+        int port = atoi(argv[1]);
         Server server(port, password);
         server.startServer();
     }

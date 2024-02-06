@@ -2,7 +2,11 @@
 # include "../HEADERS/server.hpp"
 
 void Server::sendMessageToClient(std::string message , Client client) {
-	send(client.getSocketfd(), message.c_str(), message.length(), 0);
+	int bytessent = send(client.getSocketfd(), message.c_str(), message.size(), 0);
+	if (bytessent == -1) {
+		std::cerr << "Error: send" << std::endl;
+		throw std::runtime_error("Error in send! Quitting...");
+	}
 }
 
 Client Server::getClientByNickname(std::string nickname) {
@@ -33,7 +37,7 @@ void Server::broadcastMessageOnChannel(Channel channel, std::string message, Cli
 		for (size_t i = 0; i < channel.getUsers().size(); i++) {
 			if (channel.getUsers()[i].getSocketfd() >= 0) {
 				if (channel.getUsers()[i].getSocketfd() != sender.getSocketfd())
-					sendMessageToClient(message, channel.getUsers()[i]);
+					this->sendMessageToClient(message, channel.getUsers()[i]);
 			}
 		}
 	}
