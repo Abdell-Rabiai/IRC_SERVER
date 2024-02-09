@@ -7,6 +7,7 @@ def connect_and_send(port, num_users):
     io_list = []
 
     # Create connections for all users
+    j = 0
     for i in range(num_users):
         io = socket.create_connection(('localhost', int(port)))
 
@@ -20,7 +21,8 @@ def connect_and_send(port, num_users):
         io.sendall(f"join #chaa\n".encode('utf-8'))
         io.sendall(f"privmsg #chaa :HIIIIIIIIIIIIIIIIII CHANNEL\n".encode('utf-8'))
         io_list.append(io)
-
+        j += 1
+        print(j)
         # Simulate a delay to avoid flooding the server too quickly
         time.sleep(0.1)
 
@@ -28,14 +30,14 @@ def connect_and_send(port, num_users):
     # and send a message from each user to a user named lim in the while true loop
     # like thiS: io.sendall(f"privmsg {recipient} :HELLO HELLO HELLO HELLO HELLO WORLD\n".encode('utf-8')) {recipient} is "lim"
 
-    try:
-        while True:
-            for io in io_list:
-                io.sendall(f"privmsg lim :HELLO HELLO HELLO HELLO HELLO WORLD\n".encode('utf-8'))
-                io.sendall(f"join #chaa\n".encode('utf-8'))
-                io.sendall(f"privmsg #chaa :HIIIIIIIIIIIIIIIIII CHANNEL\n".encode('utf-8'))
-                time.sleep(0.1)
-    except KeyboardInterrupt:
+    # try:
+    #     while True:
+    #         for io in io_list:
+    #             io.sendall(f"privmsg lim :HELLO HELLO HELLO HELLO HELLO WORLD\n".encode('utf-8'))
+    #             io.sendall(f"join #chaa\n".encode('utf-8'))
+    #             io.sendall(f"privmsg #chaa :HIIIIIIIIIIIIIIIIII CHANNEL\n".encode('utf-8'))
+    #             time.sleep(0.1)
+    # except KeyboardInterrupt:
         # Close all socket connections on KeyboardInterrupt
         for io in io_list:
             io.close()

@@ -86,13 +86,13 @@ int Socket::acceptSocket() {
     clientSocketfd = accept(this->fd, (struct sockaddr *)&(this->address), &addressSize);
     if (clientSocketfd < 0)
     {
-        std::cerr << "Error accepting new connection" << std::endl;
-        exit(EXIT_FAILURE);
+        perror("Error accepting connection");
+        throw std::runtime_error("Error accepting connection");
     }
     // set the client socket to be non-blocking
     int flg = fcntl(clientSocketfd, F_SETFL, O_NONBLOCK);
     if (flg < 0)
-        throw std::runtime_error("Error getting socket flags");
+        throw std::runtime_error("Error setting socket flags");
     return clientSocketfd;
 }
 
@@ -101,8 +101,8 @@ int Socket::acceptSocket() {
 void Socket::connectSocket() {
     if (connect(this->fd, (struct sockaddr *)&(this->address), sizeof(this->address)) < 0)
     {
-        std::cerr << "Error connecting to server" << std::endl;
-        exit(EXIT_FAILURE);
+        perror("Error connecting to server");
+        throw std::runtime_error("Error connecting to server");
     }
 }
 

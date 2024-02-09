@@ -338,42 +338,13 @@ int  Server::acceptNewConnection() {
 	send(clientSocketfd, welcome_msg.c_str(), welcome_msg.length(), 0);
 	return (clientSocketfd);
 }
-/*
-GitHub Copilot: In this function, the buffer size is set to 4096 bytes.
-If a user sends data that is larger than this, the `recv` function will only receive the first 4096 bytes of data.
-The remaining data will be left in the TCP/IP stack, waiting for the next `recv` call.
 
-This is because `recv` does not automatically read all available data.
-It reads up to the specified buffer size and leaves any remaining data for subsequent `recv` calls. If you want to ensure that all data is received.
-you would need to implement a loop that continues to call `recv` until no more data is available.
-
-Here's a simple example of how you might do this:
-
-std::string Server::receiveAll(int socketfd) {
-    char buffer[4096];
-    std::string data;
-
-    while (true) {
-        memset(buffer, 0, 4096);
-        int bytesReceived = recv(socketfd, buffer, 4096, 0);
-        if (bytesReceived <= 0) {
-            break;
-        }
-        data += std::string(buffer, 0, bytesReceived);
-    }
-
-    return data;
-}
-
-In this example, `recv` is called in a loop until it returns 0 or a negative number.
-indicating that no more data is available or an error occurred, respectively.
-*/
 bool Server::acceptNewMessage(int socketfd) {
 	char buffer[4096];
 	memset(buffer, 0, 4096);
-	int bytesReceived = recv(socketfd, buffer, 4096, 0);
+	int bytesReceived = recv(socketfd, buffer, sizeof(buffer) - 1, 0);
 	if (bytesReceived == -1) {
-		std::cerr << "Error in recv" << std::endl;
+		perror("Error in recving data from client");
 		return true;
 	}
 	if (bytesReceived == 0) {
@@ -384,30 +355,12 @@ bool Server::acceptNewMessage(int socketfd) {
 		return false;
 	}
 	// process the message
-	std::string data = std::string(buffer, 0, bytesReceived);
+	std::string data = std::string(buffer, bytesReceived);
 	if (!this->handleRecievedData(this->fdToClient[socketfd], data)) {
 		return false;
 	}
 	return true;
 }
-
-// bool Server::acceptNewMessage(int socketfd) {
-//     char buffer[4096];
-//     std::string data;
-//     int bytesReceived = 0;
-//     while(true) {
-//         memset(buffer, 0, 4096);
-//         bytesReceived = recv(socketfd, buffer, 4096, 0);
-//         if (bytesReceived <= 0) {
-//             break ;
-//         }
-//         data += std::string(buffer, 0, bytesReceived);
-//     }
-//     if (!this->handleRecievedData(this->fdToClient[socketfd], data)) {
-//         return false;
-//     }
-//     return true;
-// }
 
 void Server::handleEvents() {
 	// create a poll set and add the server socket to it
@@ -430,13 +383,13 @@ void Server::handleEvents() {
 		for (size_t i = 1; i < this->pollfds.size(); i++) {
 			if (this->pollfds[i].revents & POLLIN) {
 				if (!this->acceptNewMessage(this->pollfds[i].fd)) {
-					continue;
+					continue ;
 				}
 				// update the client info in the pollfds vector
 				for (size_t j = 0; j < this->clients.size(); j++) {
 					if (this->clients[j].getSocketfd() == this->pollfds[i].fd) {
 						this->clients[j] = this->fdToClient[this->pollfds[i].fd];
-						break;
+						break ;
 					}
 				}
 			}
