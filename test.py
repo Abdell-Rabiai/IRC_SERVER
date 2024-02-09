@@ -46,6 +46,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     port = sys.argv[1]
-    num_users = 100000
+    num_users = 1024
 
     connect_and_send(port, num_users)

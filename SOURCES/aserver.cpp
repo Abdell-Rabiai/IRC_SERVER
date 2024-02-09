@@ -391,6 +391,24 @@ bool Server::acceptNewMessage(int socketfd) {
 	return true;
 }
 
+// bool Server::acceptNewMessage(int socketfd) {
+//     char buffer[4096];
+//     std::string data;
+//     int bytesReceived = 0;
+//     while(true) {
+//         memset(buffer, 0, 4096);
+//         bytesReceived = recv(socketfd, buffer, 4096, 0);
+//         if (bytesReceived <= 0) {
+//             break ;
+//         }
+//         data += std::string(buffer, 0, bytesReceived);
+//     }
+//     if (!this->handleRecievedData(this->fdToClient[socketfd], data)) {
+//         return false;
+//     }
+//     return true;
+// }
+
 void Server::handleEvents() {
 	// create a poll set and add the server socket to it
 	struct pollfd serverPollfd = {this->serverSocket.getFd(), POLLIN, 0};
